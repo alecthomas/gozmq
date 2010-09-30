@@ -1,7 +1,26 @@
 package zmq
 
-// #include <zmq.h>
-// #include <stdlib.h>
+/*
+#include <zmq.h>
+#include <stdlib.h>
+#include <stdio.h>
+// XXX Could not for the life of me figure out how to get the size of a C
+// structure from Go. unsafe.Sizeof() didn't work, C.sizeof didn't work, and so
+// on.
+zmq_msg_t *alloc_zmq_msg_t() {
+  zmq_msg_t *msg = (zmq_msg_t*)malloc(sizeof(zmq_msg_t));
+  printf("Allocated new zmq_msg_t %p\n", msg);
+  return msg;
+}
+// Callback for zmq_msg_init_data.
+void free_zmq_msg_t_data(void *data, void *hint) {
+  printf("Freeing zmq_msg_t @ %p\n", data);
+  free(data);
+}
+// XXX This works around always getting the error "must call C.free_zmq_msg_t_data"
+// when attempting to reference a C function pointer. What the?!
+zmq_free_fn *free_zmq_msg_t_data_ptr = free_zmq_msg_t_data;
+*/
 import "C"
 
 import (
@@ -101,14 +120,12 @@ func (c *ZmqContext) destroy() {
 // Socket methods
 type ZmqSocket struct {
   s unsafe.Pointer
-  m C.zmq_msg_t
 }
 
 // void *zmq_socket (void *context, int type);
-func (c *ZmqContext) Socket(type_ SocketType) (s *ZmqSocket, error Error) {
+func (c *ZmqContext) Socket(t SocketType) (s *ZmqSocket) {
   s = new(ZmqSocket)
-  s.s = C.zmq_socket(c.c, C.int(type_))
-  error = Error(C.zmq_msg_init(&s.m))
+  s.s = C.zmq_socket(c.c, C.int(t))
   return s
 }
 
@@ -163,82 +180,48 @@ func (s *ZmqSocket) Connect(address string) Error {
   return Error(C.zmq_connect(s.s, a))
 }
 
-// TODO int zmq_send (void *s, zmq_msg_t *msg, int flags);
-func (s *ZmqSocket) Send(m *ZmqMessage, flags SendRecvOption) Error {
-  return Error(C.zmq_send(s.s, &m.m, C.int(flags)))
+// int zmq_send (void *s, zmq_msg_t *msg, int flags);
+// int zmq_msg_init_data (zmq_msg_t *msg, void *data, size_t size, zmq_free_fn *ffn, void *hint);
+func (s *ZmqSocket) Send(data []byte, flags SendRecvOption) (error Error) {
+  var m C.zmq_msg_t
+  error = Error(C.zmq_msg_init_data(&m, unsafe.Pointer(&data), C.size_t(len(data)), (*C.zmq_free_fn)(C.free_zmq_msg_t_data_ptr), nil))
+  if error != 0 {
+    return
+  }
+  return Error(C.zmq_send(s.s, &m, C.int(flags)))
 }
 
 // int zmq_recv (void *s, zmq_msg_t *msg, int flags);
-func (s *ZmqSocket) Recv(flags SendRecvOption) (data *[]byte, error Error) {
-  m := new(C.zmq_msg_t)
+func (s *ZmqSocket) Recv(flags SendRecvOption) (data []byte, error Error) {
+  // Allocate...
+  m := C.alloc_zmq_msg_t()
+  defer C.free_zmq_msg_t_data(unsafe.Pointer(m), nil)
+  // and initialise a new zmq_msg_t
+  error = Error(C.zmq_msg_init(m))
+  if error != 0 {
+    return
+  }
+  defer C.zmq_msg_close(m)
+  // Receive into message
   error = Error(C.zmq_recv(s.s, m, C.int(flags)))
   if error != 0 {
     data = nil
     return
   }
-  defer C.zmq_msg_close(m)
+  // Copy message data into a byte array
+  // FIXME Ideally this wouldn't require a copy.
   size := int(C.zmq_msg_size(m))
-  data = new([10]byte)
-  //(C.zmq_msg_data(m))
+  data = make([]byte, size)
+  copy(data, (*(*[]byte)(unsafe.Pointer(C.zmq_msg_data(m))))[:size])
   return
 }
-
 
 
 // Message methods
-type ZmqMessage struct {
-  m C.zmq_msg_t
-  init bool
-  data *[]byte
-}
-
-// int zmq_msg_init (zmq_msg_t *msg);
-func EmptyMessage() (m *ZmqMessage, error Error) {
-  m = new(ZmqMessage)
-  error = Error(C.zmq_msg_init(&m.m))
-  m.init = true
-  return 
-}
-
-// int zmq_msg_init_size (zmq_msg_t *msg, size_t size);
-func SizedMessage(size int) (m *ZmqMessage, error Error) {
-  m = new(ZmqMessage)
-  error = Error(C.zmq_msg_init_size(&m.m, C.size_t(size)))
-  m.init = true
-  return 
-}
-
-// int zmq_msg_init_data (zmq_msg_t *msg, void *data, size_t size, zmq_free_fn *ffn, void *hint);
-func Message(data []byte) (m *ZmqMessage, error Error) {
-  m = new(ZmqMessage)
-  m.init = true
-  error = Error(C.zmq_msg_init_data(&m.m, unsafe.Pointer(&data), C.size_t(len(data)), nil, nil))
-  m.data = &data
-  return 
-}
-
-// int zmq_msg_close (zmq_msg_t *msg);
-func (m *ZmqMessage) Close() (error Error) {
-  error = Error(C.zmq_msg_close(&m.m))
-  m.data = nil
-  return
-}
-
-func (m *ZmqMessage) destroy() {
-  if rc := m.Close(); rc != 0 {
-    panic("Failed to destroy message: " + rc.String())
-  }
-}
-
-// size_t zmq_msg_size (zmq_msg_t *msg);
-func (m *ZmqMessage) Size() int {
-  return int(C.zmq_msg_size(&m.m))
-}
-
-// void *zmq_msg_data (zmq_msg_t *msg);
-func (m *ZmqMessage) Data() *[]byte {
-  return (*[]byte)(C.zmq_msg_data(&m.m))
-}
-
+// TODO int zmq_msg_init (zmq_msg_t *msg);
+// TODO int zmq_msg_init_size (zmq_msg_t *msg, size_t size);
+// TODO int zmq_msg_close (zmq_msg_t *msg);
+// TODO size_t zmq_msg_size (zmq_msg_t *msg);
+// TODO void *zmq_msg_data (zmq_msg_t *msg);
 // TODO int zmq_msg_copy (zmq_msg_t *dest, zmq_msg_t *src);
 // TODO int zmq_msg_move (zmq_msg_t *dest, zmq_msg_t *src);
