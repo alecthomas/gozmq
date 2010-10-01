@@ -1,16 +1,8 @@
-all: sender receiver
+include $(GOROOT)/src/Make.inc
 
+TARG=zmq
 
-sender: sender.6
-	6l -o $@ $<
+CGOFILES=zmq.go
+CGO_LDFLAGS=-lzmq
 
-receiver: receiver.6
-	6l -o $@ $<
-
-
-%.6: %.go
-	6g -o $@ $<
-
-
-clean:
-	rm -f sender.6 sender receiver.6 receiver
+include $(GOROOT)/src/Make.pkg
