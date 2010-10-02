@@ -118,44 +118,59 @@ func errno() os.Error {
  * A context handles socket creation and asynchronous message delivery.
  * There should generally be one context per application.
  */
-type zmqContext struct {
+type ZmqContext struct {
 	c unsafe.Pointer
 }
 
 // Create a new context.
 // void *zmq_init (int io_threads);
-func Context() *zmqContext {
+func Context() *ZmqContext {
 	// TODO Pass something useful here. Number of cores?
-	return &zmqContext{C.zmq_init(1)}
+	return &ZmqContext{C.zmq_init(1)}
+}
+
+func (c *ZmqContext) checkContext() {
+	if c.c == nil {
+		panic("Method called on uninitialised ZmqContext.")
+	}
 }
 
 // int zmq_term (void *context);
-func (c *zmqContext) destroy() {
+func (c *ZmqContext) destroy() {
 	c.Close()
 }
 
-func (c *zmqContext) Close() {
+func (c *ZmqContext) Close() {
+	c.checkContext()
 	C.zmq_term(c.c)
 }
 
 // Create a new socket.
 // void *zmq_socket (void *context, int type);
-func (c *zmqContext) Socket(t SocketType) (s *zmqSocket) {
-	return &zmqSocket{c: c, s: C.zmq_socket(c.c, C.int(t))}
+func (c *ZmqContext) Socket(t SocketType) (s *ZmqSocket) {
+	c.checkContext()
+	return &ZmqSocket{c: c, s: C.zmq_socket(c.c, C.int(t))}
 }
 
 /*
  * Socket methods
  */
-type zmqSocket struct {
+type ZmqSocket struct {
 	// XXX Ensure the zmq context doesn't get destroyed underneath us.
-	c *zmqContext
+	c *ZmqContext
 	s unsafe.Pointer
+}
+
+func (s *ZmqSocket) checkSocket() {
+	if s.s == nil {
+		panic("Method called on uninitialised ZmqSocket.")
+	}
 }
 
 // Shutdown the socket.
 // int zmq_close (void *s);
-func (s *zmqSocket) Close() os.Error {
+func (s *ZmqSocket) Close() os.Error {
+	s.checkSocket()
 	if C.zmq_close(s.s) != 0 {
 		return errno()
 	}
@@ -163,15 +178,16 @@ func (s *zmqSocket) Close() os.Error {
 	return nil
 }
 
-func (s *zmqSocket) destroy() {
+func (s *ZmqSocket) destroy() {
 	if error := s.Close(); error != nil {
-		panic("Error while destroying zmqSocket: " + error.String() + "\n")
+		panic("Error while destroying ZmqSocket: " + error.String() + "\n")
 	}
 }
 
 // Set an int64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
-func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) os.Error {
+func (s *ZmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) os.Error {
+	s.checkSocket()
 	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
 		return errno()
 	}
@@ -180,7 +196,8 @@ func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) os.Er
 
 // Set a uint64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
-func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) os.Error {
+func (s *ZmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) os.Error {
+	s.checkSocket()
 	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
 		return errno()
 	}
@@ -189,7 +206,8 @@ func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) os
 
 // Set a string option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
-func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) os.Error {
+func (s *ZmqSocket) SetSockOptString(option StringSocketOption, value string) os.Error {
+	s.checkSocket()
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
 	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(v), C.size_t(len(value))) != 0 {
@@ -200,7 +218,8 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) os
 
 // Get an int64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, error os.Error) {
+func (s *ZmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, error os.Error) {
+	s.checkSocket()
 	size := C.size_t(unsafe.Sizeof(value))
 	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
 		error = errno()
@@ -212,7 +231,8 @@ func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, erro
 
 // Get a uint64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, error os.Error) {
+func (s *ZmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, error os.Error) {
+	s.checkSocket()
 	size := C.size_t(unsafe.Sizeof(value))
 	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
 		error = errno()
@@ -224,7 +244,8 @@ func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, e
 
 // Get a string option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, error os.Error) {
+func (s *ZmqSocket) GetSockOptString(option StringSocketOption) (value string, error os.Error) {
+	s.checkSocket()
 	var buffer [1024]byte
 	var size C.size_t = 1024
 	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&buffer), &size) != 0 {
@@ -238,7 +259,8 @@ func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, e
 
 // Bind the socket to a listening address.
 // int zmq_bind (void *s, const char *addr);
-func (s *zmqSocket) Bind(address string) os.Error {
+func (s *ZmqSocket) Bind(address string) os.Error {
+	s.checkSocket()
 	a := C.CString(address)
 	defer C.free(unsafe.Pointer(a))
 	if C.zmq_bind(s.s, a) != 0 {
@@ -249,7 +271,8 @@ func (s *zmqSocket) Bind(address string) os.Error {
 
 // Connect the socket to an address.
 // int zmq_connect (void *s, const char *addr);
-func (s *zmqSocket) Connect(address string) os.Error {
+func (s *ZmqSocket) Connect(address string) os.Error {
+	s.checkSocket()
 	a := C.CString(address)
 	defer C.free(unsafe.Pointer(a))
 	if C.zmq_connect(s.s, a) != 0 {
@@ -260,7 +283,8 @@ func (s *zmqSocket) Connect(address string) os.Error {
 
 // Send a message to the socket.
 // int zmq_send (void *s, zmq_msg_t *msg, int flags);
-func (s *zmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
+func (s *ZmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
+	s.checkSocket()
 	var m C.zmq_msg_t
 	// Copy data array into C-allocated buffer.
 	size := C.size_t(len(data))
@@ -280,7 +304,8 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
 
 // Receive a message from the socket.
 // int zmq_recv (void *s, zmq_msg_t *msg, int flags);
-func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, error os.Error) {
+func (s *ZmqSocket) Recv(flags SendRecvOption) (data []byte, error os.Error) {
+	s.checkSocket()
 	// Allocate and initialise a new zmq_msg_t
 	m := C.alloc_zmq_msg_t()
 	defer C.free_zmq_msg_t_data(unsafe.Pointer(m), nil)
