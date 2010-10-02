@@ -55,3 +55,8 @@ func TestSend(t *testing.T) {
   }
   shutdown <- true
 }
+
+// TODO Test various socket types. UDP, TCP, etc.
+// TODO Test NOBLOCK mode.
+// TODO Test getting/setting socket options. Probably sufficient to do just one
+// int and one string test.

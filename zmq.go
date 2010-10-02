@@ -1,5 +1,5 @@
 /*
- * This package provides bindings to the 0mq C API.
+ * This package implements Go bindings for the 0mq C API.
  *
  * It does not attempt to expose zmq_msg_t at all. Instead, Recv() and Send()
  * both operate on byte slices, allocating and freeing the memory
@@ -27,7 +27,7 @@ package zmq
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>
-// XXX Could not for the life of me figure out how to get the size of a C
+// FIXME Could not for the life of me figure out how to get the size of a C
 // structure from Go. unsafe.Sizeof() didn't work, C.sizeof didn't work, and so
 // on.
 zmq_msg_t *alloc_zmq_msg_t() {
@@ -38,8 +38,9 @@ zmq_msg_t *alloc_zmq_msg_t() {
 void free_zmq_msg_t_data(void *data, void *hint) {
   free(data);
 }
-// XXX This works around always getting the error "must call C.free_zmq_msg_t_data"
-// when attempting to reference a C function pointer. What the?!
+// FIXME This works around always getting the error "must call
+// C.free_zmq_msg_t_data" when attempting to reference a C function pointer.
+// What the?!
 zmq_free_fn *free_zmq_msg_t_data_ptr = free_zmq_msg_t_data;
 */
 import "C"
@@ -277,7 +278,6 @@ func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, error os.Error) {
 }
 
 
-// Message methods
 // XXX For now, this library abstracts zmq_msg_t out of the API.
 // int zmq_msg_init (zmq_msg_t *msg);
 // int zmq_msg_init_size (zmq_msg_t *msg, size_t size);
