@@ -10,13 +10,15 @@ const SERVER_READY = "SERVER READY"
 
 
 // Start a goroutine listening to a local socket
-func runZmqServer(a string, t SocketType, shutdown chan bool, out chan string) {
+func runZmqServer(addresses []string, t SocketType, shutdown chan bool, out chan string) {
   c := Context()
   defer c.Close()
   s := c.Socket(t)
   defer s.Close()
-  if rc := s.Bind(a); rc != nil {
-    panic("Failed to bind to " + a + "; " + rc.String())
+  for _, address := range addresses {
+    if rc := s.Bind(address); rc != nil {
+      panic("Failed to bind to " + address + "; " + rc.String())
+    }
   }
   out <- SERVER_READY
   for {
@@ -49,7 +51,7 @@ func TestBindToLoopBack(t *testing.T) {
 func TestSend(t *testing.T) {
   server := make(chan string)
   shutdown := make(chan bool, 1)
-  go runZmqServer(ADDRESS, REP, shutdown, server)
+  go runZmqServer([]string{ADDRESS}, REP, shutdown, server)
   ready := <-server
   if ready != SERVER_READY {
   }
@@ -60,3 +62,6 @@ func TestSend(t *testing.T) {
 // TODO Test NOBLOCK mode.
 // TODO Test getting/setting socket options. Probably sufficient to do just one
 // int and one string test.
+
+
+// TODO Test that closing a context underneath a socket behaves "reasonably" (ie. doesnt' crash).

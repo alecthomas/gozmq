@@ -24,6 +24,7 @@
 package zmq
 
 /*
+#include <stdint.h>
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,12 +48,14 @@ import "C"
 
 import (
   "os"
+//  "runtime"
   "unsafe"
 )
 
 
 type SocketType int
-type IntSocketOption int
+type Int64SocketOption int
+type UInt64SocketOption int
 type StringSocketOption int
 type SendRecvOption int
 
@@ -69,18 +72,19 @@ const (
   PUSH = SocketType(C.ZMQ_PUSH)
 
   // Socket options
-  HWM = IntSocketOption(C.ZMQ_HWM)
-  SWAP = IntSocketOption(C.ZMQ_SWAP)
-  AFFINITY = IntSocketOption(C.ZMQ_AFFINITY)
+  HWM = UInt64SocketOption(C.ZMQ_HWM)
+  SWAP = Int64SocketOption(C.ZMQ_SWAP)
+  AFFINITY = UInt64SocketOption(C.ZMQ_AFFINITY)
   IDENTITY = StringSocketOption(C.ZMQ_IDENTITY)
   SUBSCRIBE = StringSocketOption(C.ZMQ_SUBSCRIBE)
   UNSUBSCRIBE = StringSocketOption(C.ZMQ_UNSUBSCRIBE)
-  RATE = IntSocketOption(C.ZMQ_RATE)
-  RECOVERY_IVL = IntSocketOption(C.ZMQ_RECOVERY_IVL)
-  MCAST_LOOP = IntSocketOption(C.ZMQ_MCAST_LOOP)
-  SNDBUF = IntSocketOption(C.ZMQ_SNDBUF)
-  RCVBUF = IntSocketOption(C.ZMQ_RCVBUF)
-  RCVMORE = IntSocketOption(C.ZMQ_RCVMORE)
+  RATE = Int64SocketOption(C.ZMQ_RATE)
+  RECOVERY_IVL = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
+  MCAST_LOOP = Int64SocketOption(C.ZMQ_MCAST_LOOP)
+  SNDBUF = UInt64SocketOption(C.ZMQ_SNDBUF)
+  RCVBUF = UInt64SocketOption(C.ZMQ_RCVBUF)
+  // Not documented. Probably? related to SNDMORE.
+  // RCVMORE = UInt64SocketOption(C.ZMQ_RCVMORE)
 
   // Send/recv options
   NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
@@ -90,7 +94,10 @@ const (
 
 
 
-// Misc functions
+/*
+ * Misc functions
+ */
+
 
 // TODO int zmq_poll (zmq_pollitem_t *items, int nitems, long timeout);
 // TODO int zmq_device (int device, void * insocket, void* outsocket);
@@ -108,14 +115,13 @@ func errno() os.Error {
   return os.Errno(C.zmq_errno())
 }
 
-
-
-// A context handles socket creation and asynchronous message delivery.
-// There should generally be one context per application.
+/*
+ * A context handles socket creation and asynchronous message delivery.
+ * There should generally be one context per application.
+ */
 type zmqContext struct {
   c unsafe.Pointer
 }
-
 
 // Create a new context.
 // void *zmq_init (int io_threads);
@@ -129,7 +135,6 @@ func (c *zmqContext) destroy() {
  c.Close()
 }
 
-
 func (c *zmqContext) Close() {
   C.zmq_term(c.c)
 }
@@ -137,13 +142,15 @@ func (c *zmqContext) Close() {
 // Create a new socket.
 // void *zmq_socket (void *context, int type);
 func (c *zmqContext) Socket(t SocketType) (s *zmqSocket) {
-  return &zmqSocket{C.zmq_socket(c.c, C.int(t))}
+  return &zmqSocket{c: c, s: C.zmq_socket(c.c, C.int(t))}
 }
 
-
-
-// Socket methods
+/*
+ * Socket methods
+ */
 type zmqSocket struct {
+  // XXX Ensure the zmq context doesn't get destroyed underneath us.
+  c *zmqContext
   s unsafe.Pointer
 }
 
@@ -153,6 +160,7 @@ func (s *zmqSocket) Close() os.Error {
   if C.zmq_close(s.s) != 0 {
     return errno()
   }
+  s.c = nil
   return nil
 }
 
@@ -162,9 +170,18 @@ func (s *zmqSocket) destroy() {
   }
 }
 
-// Set an integer option on the socket.
+// Set an int64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
-func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int64) os.Error {
+func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) os.Error {
+  if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
+    return errno()
+  }
+  return nil
+}
+
+// Set a uint64 option on the socket.
+// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
+func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) os.Error {
   if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
     return errno()
   }
@@ -182,10 +199,22 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) os
   return nil
 }
 
-// Get an integer option from the socket.
+// Get an int64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptInt(option IntSocketOption) (value int64, error os.Error) {
-  size := C.size_t(8)
+func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, error os.Error) {
+  size := C.size_t(unsafe.Sizeof(value))
+  if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
+    error = errno()
+    return
+  }
+  error = nil
+  return
+}
+
+// Get a uint64 option from the socket.
+// int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
+func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, error os.Error) {
+  size := C.size_t(unsafe.Sizeof(value))
   if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
     error = errno()
     return
