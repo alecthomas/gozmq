@@ -52,6 +52,25 @@ import (
 	"unsafe"
 )
 
+type ZmqContext interface {
+	Socket(t SocketType) ZmqSocket
+	Close()
+}
+
+type ZmqSocket interface {
+	Bind(address string) os.Error
+	Connect(address string) os.Error
+	Send(data []byte, flags SendRecvOption) os.Error
+	Recv(flags SendRecvOption) (data []byte, error os.Error)
+	Close() os.Error
+
+	SetSockOptInt64(option Int64SocketOption, value int64) os.Error
+	SetSockOptUInt64(option UInt64SocketOption, value uint64) os.Error
+	SetSockOptString(option StringSocketOption, value string) os.Error
+	GetSockOptInt64(option Int64SocketOption) (value int64, error os.Error)
+	GetSockOptUInt64(option UInt64SocketOption) (value uint64, error os.Error)
+	GetSockOptString(option StringSocketOption) (value string, error os.Error)
+}
 
 type SocketType int
 type Int64SocketOption int
@@ -96,8 +115,6 @@ const (
 /*
  * Misc functions
  */
-
-
 // TODO int zmq_poll (zmq_pollitem_t *items, int nitems, long timeout);
 // TODO int zmq_device (int device, void * insocket, void* outsocket);
 
@@ -112,11 +129,6 @@ func Version() (int, int, int) {
 // int zmq_errno ();
 func errno() os.Error {
 	return os.Errno(C.zmq_errno())
-}
-
-type ZmqContext interface {
-	Socket(t SocketType) ZmqSocket
-	Close()
 }
 
 /*
@@ -147,24 +159,6 @@ func (c *zmqContext) Close() {
 // void *zmq_socket (void *context, int type);
 func (c *zmqContext) Socket(t SocketType) ZmqSocket {
 	return &zmqSocket{c: c, s: C.zmq_socket(c.c, C.int(t))}
-}
-
-/*
- * Socket interface.
- */
-type ZmqSocket interface {
-	Bind(address string) os.Error
-	Connect(address string) os.Error
-	Send(data []byte, flags SendRecvOption) os.Error
-	Recv(flags SendRecvOption) (data []byte, error os.Error)
-	Close() os.Error
-
-	SetSockOptInt64(option Int64SocketOption, value int64) os.Error
-	SetSockOptUInt64(option UInt64SocketOption, value uint64) os.Error
-	SetSockOptString(option StringSocketOption, value string) os.Error
-	GetSockOptInt64(option Int64SocketOption) (value int64, error os.Error)
-	GetSockOptUInt64(option UInt64SocketOption) (value uint64, error os.Error)
-	GetSockOptString(option StringSocketOption) (value string, error os.Error)
 }
 
 type zmqSocket struct {
