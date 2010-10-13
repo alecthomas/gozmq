@@ -48,7 +48,6 @@ import "C"
 
 import (
 	"os"
-	//  "runtime"
 	"unsafe"
 )
 
@@ -61,15 +60,15 @@ type ZmqSocket interface {
 	Bind(address string) os.Error
 	Connect(address string) os.Error
 	Send(data []byte, flags SendRecvOption) os.Error
-	Recv(flags SendRecvOption) (data []byte, error os.Error)
+	Recv(flags SendRecvOption) (data []byte, err os.Error)
 	Close() os.Error
 
 	SetSockOptInt64(option Int64SocketOption, value int64) os.Error
 	SetSockOptUInt64(option UInt64SocketOption, value uint64) os.Error
 	SetSockOptString(option StringSocketOption, value string) os.Error
-	GetSockOptInt64(option Int64SocketOption) (value int64, error os.Error)
-	GetSockOptUInt64(option UInt64SocketOption) (value uint64, error os.Error)
-	GetSockOptString(option StringSocketOption) (value string, error os.Error)
+	GetSockOptInt64(option Int64SocketOption) (value int64, err os.Error)
+	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err os.Error)
+	GetSockOptString(option StringSocketOption) (value string, err os.Error)
 }
 
 type SocketType int
@@ -178,8 +177,8 @@ func (s *zmqSocket) Close() os.Error {
 }
 
 func (s *zmqSocket) destroy() {
-	if error := s.Close(); error != nil {
-		panic("Error while destroying zmqSocket: " + error.String() + "\n")
+	if err := s.Close(); err != nil {
+		panic("Error while destroying zmqSocket: " + err.String() + "\n")
 	}
 }
 
@@ -214,39 +213,36 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) os
 
 // Get an int64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, error os.Error) {
+func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, err os.Error) {
 	size := C.size_t(unsafe.Sizeof(value))
 	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
-		error = errno()
+		err = errno()
 		return
 	}
-	error = nil
 	return
 }
 
 // Get a uint64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, error os.Error) {
+func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err os.Error) {
 	size := C.size_t(unsafe.Sizeof(value))
 	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
-		error = errno()
+		err = errno()
 		return
 	}
-	error = nil
 	return
 }
 
 // Get a string option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, error os.Error) {
+func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, err os.Error) {
 	var buffer [1024]byte
 	var size C.size_t = 1024
 	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&buffer), &size) != 0 {
-		error = errno()
+		err = errno()
 		return
 	}
 	value = string(buffer[:size])
-	error = nil
 	return
 }
 
@@ -294,26 +290,23 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
 
 // Receive a message from the socket.
 // int zmq_recv (void *s, zmq_msg_t *msg, int flags);
-func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, error os.Error) {
+func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err os.Error) {
 	// Allocate and initialise a new zmq_msg_t
 	m := C.alloc_zmq_msg_t()
 	defer C.free_zmq_msg_t_data(unsafe.Pointer(m), nil)
 	if C.zmq_msg_init(m) != 0 {
-		error = errno()
-		data = nil
+		err = errno()
 		return
 	}
 	defer C.zmq_msg_close(m)
 	// Receive into message
 	if C.zmq_recv(s.s, m, C.int(flags)) != 0 {
-		error = errno()
-		data = nil
+		err = errno()
 		return
 	}
 	// Copy message data into a byte array
 	// FIXME Ideally this wouldn't require a copy.
 	size := C.zmq_msg_size(m)
-	error = nil
 	data = make([]byte, int(size))
 	C.memcpy(unsafe.Pointer(&data[0]), C.zmq_msg_data(m), size)
 	return
