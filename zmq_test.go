@@ -38,6 +38,13 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+func TestCreateDestroyContext(t *testing.T) {
+   c := Context()
+   c.Close()
+   c = Context()
+   c.Close()
+}
+
 func TestBindToLoopBack(t *testing.T) {
 	c := Context()
 	defer c.Close()
@@ -45,6 +52,19 @@ func TestBindToLoopBack(t *testing.T) {
 	defer s.Close()
 	if rc := s.Bind(ADDRESS); rc != nil {
 		t.Errorf("Failed to bind to %s; %s", ADDRESS, rc.String())
+	}
+}
+
+func TestSetSockOptString(t *testing.T) {
+	c := Context()
+	defer c.Close()
+	s := c.Socket(SUB)
+	defer s.Close()
+	if rc := s.Bind(ADDRESS); rc != nil {
+		t.Errorf("Failed to bind to %s; %s", ADDRESS, rc.String())
+	}
+	if rc := s.SetSockOptString(SUBSCRIBE, "TEST"); rc != nil {
+		t.Errorf("Failed to subscribe; %v", rc)
 	}
 }
 
