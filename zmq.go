@@ -279,12 +279,12 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
 	if C.zmq_msg_init_size(&m, size) != 0 {
 		return errno()
 	}
-	
+
 	if size > 0 {
 		// FIXME Ideally this wouldn't require a copy.
 		C.memcpy(unsafe.Pointer(C.zmq_msg_data(&m)), unsafe.Pointer(&data[0]), size) // XXX I hope this works...(seems to)
 	}
-	
+
 	if C.zmq_send(s.s, &m, C.int(flags)) != 0 {
 		return errno()
 	}
