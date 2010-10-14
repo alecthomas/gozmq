@@ -274,14 +274,17 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
 	var m C.zmq_msg_t
 	// Copy data array into C-allocated buffer.
 	size := C.size_t(len(data))
-	d := unsafe.Pointer(C.malloc(size))
-	// FIXME Ideally this wouldn't require a copy.
-	C.memcpy(d, unsafe.Pointer(&data[0]), size) // XXX I hope this works...(seems to)
+
 	// The semantics around this failing are not clear. Will d be freed? Who knows.
-	if C.zmq_msg_init_data(&m, d, size, C.free_zmq_msg_t_data_ptr, nil) != 0 {
-		C.free(d) // We didn't use defer for this because if init succeeds we do not want to free the data buffer.
+	if C.zmq_msg_init_size(&m, size) != 0 {
 		return errno()
 	}
+	
+	if size > 0 {
+		// FIXME Ideally this wouldn't require a copy.
+		C.memcpy(unsafe.Pointer(C.zmq_msg_data(&m)), unsafe.Pointer(&data[0]), size) // XXX I hope this works...(seems to)
+	}
+	
 	if C.zmq_send(s.s, &m, C.int(flags)) != 0 {
 		return errno()
 	}
@@ -292,23 +295,26 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
 // int zmq_recv (void *s, zmq_msg_t *msg, int flags);
 func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err os.Error) {
 	// Allocate and initialise a new zmq_msg_t
-	m := C.alloc_zmq_msg_t()
-	defer C.free_zmq_msg_t_data(unsafe.Pointer(m), nil)
-	if C.zmq_msg_init(m) != 0 {
+	var m C.zmq_msg_t
+	if C.zmq_msg_init(&m) != 0 {
 		err = errno()
 		return
 	}
-	defer C.zmq_msg_close(m)
+	defer C.zmq_msg_close(&m)
 	// Receive into message
-	if C.zmq_recv(s.s, m, C.int(flags)) != 0 {
+	if C.zmq_recv(s.s, &m, C.int(flags)) != 0 {
 		err = errno()
 		return
 	}
 	// Copy message data into a byte array
 	// FIXME Ideally this wouldn't require a copy.
-	size := C.zmq_msg_size(m)
-	data = make([]byte, int(size))
-	C.memcpy(unsafe.Pointer(&data[0]), C.zmq_msg_data(m), size)
+	size := C.zmq_msg_size(&m)
+	if size > 0 {
+		data = make([]byte, int(size))
+		C.memcpy(unsafe.Pointer(&data[0]), C.zmq_msg_data(&m), size)
+	} else {
+		data = nil
+	}
 	return
 }
 
