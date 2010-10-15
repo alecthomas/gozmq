@@ -1,6 +1,7 @@
 package zmq
 
 import (
+	"runtime"
 	"testing"
 )
 
@@ -8,26 +9,20 @@ import (
 const ADDRESS = "tcp://127.0.0.1:23456"
 const SERVER_READY = "SERVER READY"
 
-
-// Start a goroutine listening to a local socket
-func runZmqServer(addresses []string, t SocketType, shutdown chan bool, out chan string) {
-	c := Context()
-	defer c.Close()
-	s := c.Socket(t)
-	defer s.Close()
-	for _, address := range addresses {
-		if rc := s.Bind(address); rc != nil {
-			panic("Failed to bind to " + address + "; " + rc.String())
+func runServer(t *testing.T, c ZmqContext, callback func (s ZmqSocket)) chan bool {
+	finished := make(chan bool)
+	go func() {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+		s := c.Socket(REP)
+		defer s.Close()
+		if rc := s.Bind(ADDRESS); rc != nil {
+			t.Errorf("Failed to bind to %s; %s", ADDRESS, rc.String())
 		}
-	}
-	out <- SERVER_READY
-	for {
-		data, rc := s.Recv(0)
-		if rc != nil {
-			panic("Failed to receive packet " + rc.String())
-		}
-		out <- string(data)
-	}
+		callback(s)
+		finished <- true
+	}()
+	return finished
 }
 
 func TestVersion(t *testing.T) {
@@ -68,14 +63,31 @@ func TestSetSockOptString(t *testing.T) {
 	}
 }
 
-func TestSend(t *testing.T) {
-	server := make(chan string)
-	shutdown := make(chan bool, 1)
-	go runZmqServer([]string{ADDRESS}, REP, shutdown, server)
-	ready := <-server
-	if ready != SERVER_READY {
+func TestMultipart(t *testing.T) {
+	c := Context()
+	defer c.Close()
+	finished := runServer(t, c, func (s ZmqSocket) {
+		parts, rc := s.RecvMultipart(0)
+		if rc != nil {
+			t.Errorf("Failed to receive multipart message; %s", rc.String())
+		}
+		if len(parts) != 2 {
+			t.Errorf("Invalid multipart message, not enough parts; %d", len(parts))
+		}
+		if string(parts[0]) != "part1" || string(parts[1]) != "part2" {
+			t.Errorf("Invalid multipart message.")
+		}
+	})
+
+	s := c.Socket(REQ)
+	defer s.Close()
+	if rc := s.Connect(ADDRESS); rc != nil {
+		t.Errorf("Failed to connect to %s; %s", ADDRESS, rc.String())
 	}
-	shutdown <- true
+	if rc := s.SendMultipart([][]byte{[]byte("part1"), []byte("part2")}, 0); rc != nil {
+		t.Errorf("Failed to send multipart message; %s", rc.String())
+	}
+	<-finished
 }
 
 // TODO Test various socket types. UDP, TCP, etc.

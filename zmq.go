@@ -47,6 +47,7 @@ zmq_free_fn *free_zmq_msg_t_data_ptr = free_zmq_msg_t_data;
 import "C"
 
 import (
+	"container/vector"
 	"os"
 	"unsafe"
 )
@@ -61,6 +62,8 @@ type ZmqSocket interface {
 	Connect(address string) os.Error
 	Send(data []byte, flags SendRecvOption) os.Error
 	Recv(flags SendRecvOption) (data []byte, err os.Error)
+	RecvMultipart(flags SendRecvOption) (parts [][]byte, err os.Error)
+	SendMultipart(parts [][]byte, flags SendRecvOption) (err os.Error)
 	Close() os.Error
 
 	SetSockOptInt64(option Int64SocketOption, value int64) os.Error
@@ -102,12 +105,12 @@ const (
 	SNDBUF       = UInt64SocketOption(C.ZMQ_SNDBUF)
 	RCVBUF       = UInt64SocketOption(C.ZMQ_RCVBUF)
 	// Not documented. Probably? related to SNDMORE.
-	// RCVMORE = UInt64SocketOption(C.ZMQ_RCVMORE)
+	RCVMORE      = UInt64SocketOption(C.ZMQ_RCVMORE)
 
 	// Send/recv options
 	NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
 	// This is not supported (yet).
-	//SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
+	SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
 )
 
 
@@ -314,6 +317,41 @@ func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err os.Error) {
 		C.memcpy(unsafe.Pointer(&data[0]), C.zmq_msg_data(&m), size)
 	} else {
 		data = nil
+	}
+	return
+}
+
+// Send a multipart message.
+func (s *zmqSocket) SendMultipart(parts [][]byte, flags SendRecvOption) (err os.Error) {
+	for i := 0; i < len(parts) - 1; i++ {
+		if err = s.Send(parts[i], SNDMORE | flags); err != nil {
+			return
+		}
+	}
+	err = s.Send(parts[(len(parts) - 1)], flags)
+	return
+}
+
+// Receive a multipart message.
+func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err os.Error) {
+	buffer := new(vector.Vector)
+	for {
+		data, err := s.Recv(flags)
+		if err != nil {
+			return
+		}
+		buffer.Push(data)
+		more, err := s.GetSockOptUInt64(RCVMORE)
+		if err != nil {
+			return
+		}
+		if more == 0 {
+			break
+		}
+	}
+	parts = make([][]byte, buffer.Len())
+	for i := 0; i < buffer.Len(); i++ {
+		parts[i] = []byte(buffer.At(i).([]byte))
 	}
 	return
 }
