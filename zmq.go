@@ -24,25 +24,9 @@
 package zmq
 
 /*
-#include <stdint.h>
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>
-// FIXME Could not for the life of me figure out how to get the size of a C
-// structure from Go. unsafe.Sizeof() didn't work, C.sizeof didn't work, and so
-// on.
-zmq_msg_t *alloc_zmq_msg_t() {
-  zmq_msg_t *msg = (zmq_msg_t*)malloc(sizeof(zmq_msg_t));
-  return msg;
-}
-// Callback for zmq_msg_init_data.
-void free_zmq_msg_t_data(void *data, void *hint) {
-  free(data);
-}
-// FIXME This works around always getting the error "must call
-// C.free_zmq_msg_t_data" when attempting to reference a C function pointer.
-// What the?!
-zmq_free_fn *free_zmq_msg_t_data_ptr = free_zmq_msg_t_data;
 */
 import "C"
 
@@ -278,7 +262,6 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
 	// Copy data array into C-allocated buffer.
 	size := C.size_t(len(data))
 
-	// The semantics around this failing are not clear. Will d be freed? Who knows.
 	if C.zmq_msg_init_size(&m, size) != 0 {
 		return errno()
 	}
@@ -289,6 +272,8 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) os.Error {
 	}
 
 	if C.zmq_send(s.s, &m, C.int(flags)) != 0 {
+		// zmq_send did not take ownership, free message
+		C.zmq_msg_close(&m)
 		return errno()
 	}
 	return nil
