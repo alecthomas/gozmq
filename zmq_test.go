@@ -36,34 +36,21 @@ func runServer(t *testing.T, c ZmqContext, callback func(s ZmqSocket)) chan bool
 	return finished
 }
 
-func runPollServer(t *testing.T, c ZmqContext) (done, bound chan bool) {
+func runPollServer(t *testing.T) (done, bound chan bool) {
 	done = make(chan bool)
 	bound = make(chan bool)
 	go func() {
-		runtime.LockOSThread()
-		defer runtime.UnlockOSThread()
-		s1 := c.Socket(REP)
-		defer s1.Close()
-		if rc := s1.Bind(ADDRESS1); rc != nil {
-			t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
-		}
+		te := NewTestEnv(t)
+		defer te.Close()
+		s1 := te.NewBoundSocket(REP, ADDRESS1)
+		s2 := te.NewBoundSocket(REP, ADDRESS2)
+		s3 := te.NewBoundSocket(REP, ADDRESS3)
 
-		s2 := c.Socket(REP)
-		defer s2.Close()
-		if rc := s2.Bind(ADDRESS2); rc != nil {
-			t.Errorf("Failed to bind to %s; %s", ADDRESS2, rc.String())
-		}
-
-		s3 := c.Socket(REP)
-		defer s3.Close()
-
-		if rc := s3.Bind(ADDRESS3); rc != nil {
-			t.Errorf("Failed to bind to %s; %s", ADDRESS3, rc.String())
-		}
-
-		pi := PollItems{PollItem{Socket: s1, Events: POLLIN},
+		pi := PollItems{
+			PollItem{Socket: s1, Events: POLLIN},
 			PollItem{Socket: s2, Events: POLLIN},
-			PollItem{Socket: s3, Events: POLLIN}}
+			PollItem{Socket: s3, Events: POLLIN},
+		}
 		bound <- true
 
 		sent := 0
@@ -165,29 +152,17 @@ func TestMultipart(t *testing.T) {
 }
 
 func TestPoll(t *testing.T) {
-	c := Context()
-	defer c.Close()
-	finished, bound := runPollServer(t, c)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
+	te := NewTestEnv(t)
+	defer te.Close()
+	finished, bound := runPollServer(t)
 
 	// wait for sockets to bind
 	<-bound
 
 	for _, addr := range []string{ADDRESS2, ADDRESS3, ADDRESS1} {
-		s := c.Socket(REQ)
-		defer s.Close()
-
-		if rc := s.Connect(addr); rc != nil {
-			t.Errorf("Failed to connect to %s; %s", addr, rc.String())
-		}
-		if rc := s.Send([]byte("request data"), 0); rc != nil {
-			t.Errorf("Failed to send message: %v", rc)
-		}
-		if _, rc := s.Recv(0); rc != nil {
-			t.Errorf("Failed to recv message: %v", rc)
-		}
+		sock := te.NewConnectedSocket(REQ, addr)
+		te.Send(sock, []byte("request data"), 0)
+		te.Recv(sock, 0)
 	}
 
 	<-finished
@@ -218,6 +193,7 @@ func TestDevice(t *testing.T) {
 	te.Recv(in, 0)
 }
 
+// A helper to make tests less verbose
 type testEnv struct {
 	context ZmqContext
 	sockets vector.Vector
