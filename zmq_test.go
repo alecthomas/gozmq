@@ -8,7 +8,6 @@ import (
 	"container/vector"
 )
 
-
 const ADDRESS1 = "tcp://127.0.0.1:23456"
 const ADDRESS2 = "tcp://127.0.0.1:23457"
 const ADDRESS3 = "tcp://127.0.0.1:23458"
@@ -17,6 +16,9 @@ const ADDRESS3 = "tcp://127.0.0.1:23458"
 // will keep running after the test terminates
 const ADDR_DEV_IN = "tcp://127.0.0.1:24111"
 const ADDR_DEV_OUT = "tcp://127.0.0.1:24112"
+
+// a process local address
+const ADDRESS_INPROC = "inproc://test"
 
 const SERVER_READY = "SERVER READY"
 
@@ -191,6 +193,80 @@ func TestDevice(t *testing.T) {
 
 	te.Send(out, nil, 0)
 	te.Recv(in, 0)
+}
+
+// expensive test - send a huge amount of data. should be enough to
+// trash a current machine if Send or Recv are leaking.
+/*
+func TestMessageMemory(t *testing.T) {
+	// primarily to see if Send or Recv are leaking memory
+	
+	const MSG_SIZE = 1e6
+	const MSG_COUNT = 100 * 1000
+	
+	te := NewTestEnv(nil)
+	defer te.Close()
+	
+	data := make([]byte, MSG_SIZE)
+	
+	out := te.NewBoundSocket(PUSH, ADDRESS1)
+	in := te.NewConnectedSocket(PULL, ADDRESS1)
+
+	for i := 0; i < MSG_COUNT; i++ {
+		te.Send(out, data, 0)
+		d2 := te.Recv(in, 0)
+		if len(d2) != MSG_SIZE {
+			t.Errorf("Bad message size received")
+		}
+	}
+}
+*/
+
+func doBenchmarkSendReceive(b *testing.B, size int, addr string) {
+	// since this is a benchmark it should probably call
+	// this package's api functions directly rather than 
+	// using the testEnv wrappers
+	b.StopTimer()
+	data := make([]byte, size)
+	
+	te := NewTestEnv(nil)
+	defer te.Close()
+	b.StartTimer()
+	
+	out := te.NewBoundSocket(PUSH, ADDRESS1)
+	in := te.NewConnectedSocket(PULL, ADDRESS1)
+	
+	for i := 0; i < b.N; i++ {
+		te.Send(out, data, 0)
+		d2 := te.Recv(in, 0)
+		if len(d2) != size {
+			panic("Bad message size received")
+		}
+	}
+}
+
+func BenchmarkSendReceive1Btcp(b *testing.B) {
+	doBenchmarkSendReceive(b,1,ADDRESS1)
+}
+
+func BenchmarkSendReceive1KBtcp(b *testing.B) {
+	doBenchmarkSendReceive(b, 1e3,ADDRESS1)
+}
+
+func BenchmarkSendReceive1MBtcp(b *testing.B) {
+	doBenchmarkSendReceive(b, 1e6,ADDRESS1)
+}
+
+func BenchmarkSendReceive1Binproc(b *testing.B) {
+	doBenchmarkSendReceive(b,1, ADDRESS_INPROC)
+}
+
+func BenchmarkSendReceive1KBinproc(b *testing.B) {
+	doBenchmarkSendReceive(b, 1e3,ADDRESS_INPROC)
+}
+
+func BenchmarkSendReceive1MBinproc(b *testing.B) {
+	doBenchmarkSendReceive(b, 1e6,ADDRESS_INPROC)
 }
 
 // A helper to make tests less verbose
