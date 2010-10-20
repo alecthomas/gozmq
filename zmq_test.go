@@ -9,7 +9,7 @@ import (
 const ADDRESS = "tcp://127.0.0.1:23456"
 const SERVER_READY = "SERVER READY"
 
-func runServer(t *testing.T, c ZmqContext, callback func (s ZmqSocket)) chan bool {
+func runServer(t *testing.T, c ZmqContext, callback func(s ZmqSocket)) chan bool {
 	finished := make(chan bool)
 	go func() {
 		runtime.LockOSThread()
@@ -34,10 +34,10 @@ func TestVersion(t *testing.T) {
 }
 
 func TestCreateDestroyContext(t *testing.T) {
-   c := Context()
-   c.Close()
-   c = Context()
-   c.Close()
+	c := Context()
+	c.Close()
+	c = Context()
+	c.Close()
 }
 
 func TestBindToLoopBack(t *testing.T) {
@@ -66,7 +66,7 @@ func TestSetSockOptString(t *testing.T) {
 func TestMultipart(t *testing.T) {
 	c := Context()
 	defer c.Close()
-	finished := runServer(t, c, func (s ZmqSocket) {
+	finished := runServer(t, c, func(s ZmqSocket) {
 		parts, rc := s.RecvMultipart(0)
 		if rc != nil {
 			t.Errorf("Failed to receive multipart message; %s", rc.String())
