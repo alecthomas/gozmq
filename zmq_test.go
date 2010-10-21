@@ -1,7 +1,6 @@
 package gozmq
 
 import (
-	"fmt"
 	"log"
 	"runtime"
 	"testing"
@@ -50,9 +49,9 @@ func runPollServer(t *testing.T) (done, bound chan bool) {
 		s3 := te.NewBoundSocket(REP, ADDRESS3)
 
 		pi := PollItems{
-			PollItem{NewSocket: s1, Events: POLLIN},
-			PollItem{NewSocket: s2, Events: POLLIN},
-			PollItem{NewSocket: s3, Events: POLLIN},
+			PollItem{Socket: s1, Events: POLLIN},
+			PollItem{Socket: s2, Events: POLLIN},
+			PollItem{Socket: s3, Events: POLLIN},
 		}
 		bound <- true
 
@@ -66,16 +65,16 @@ func runPollServer(t *testing.T) (done, bound chan bool) {
 
 			switch {
 			case pi[0].REvents&POLLIN != 0:
-				pi[0].NewSocket.Recv(0) // eat the incoming message
-				pi[0].NewSocket.Send(nil, 0)
+				pi[0].Socket.Recv(0) // eat the incoming message
+				pi[0].Socket.Send(nil, 0)
 				sent++
 			case pi[1].REvents&POLLIN != 0:
-				pi[1].NewSocket.Recv(0) // eat the incoming message
-				pi[1].NewSocket.Send(nil, 0)
+				pi[1].Socket.Recv(0) // eat the incoming message
+				pi[1].Socket.Send(nil, 0)
 				sent++
 			case pi[2].REvents&POLLIN != 0:
-				pi[2].NewSocket.Recv(0) // eat the incoming message
-				pi[2].NewSocket.Send(nil, 0)
+				pi[2].Socket.Recv(0) // eat the incoming message
+				pi[2].Socket.Send(nil, 0)
 				sent++
 			}
 

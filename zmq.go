@@ -346,7 +346,7 @@ func (s *zmqSocket) apiSocket() unsafe.Pointer {
 
 // Item to poll for read/write events on, either a Socket or a file descriptor
 type PollItem struct {
-	NewSocket Socket     // socket to poll for events on 
+	Socket    Socket     // socket to poll for events on 
 	Fd        int        // fd to poll for events on as returned from os.File.Fd() 
 	Events    PollEvents // event set to poll for
 	REvents   PollEvents // events that were present
@@ -360,7 +360,7 @@ type PollItems []PollItem
 func Poll(items []PollItem, timeout int64) (count int, err os.Error) {
 	zitems := make([]C.zmq_pollitem_t, len(items))
 	for i, pi := range items {
-		zitems[i].socket = pi.NewSocket.apiSocket()
+		zitems[i].socket = pi.Socket.apiSocket()
 		zitems[i].fd = C.int(pi.Fd)
 		zitems[i].events = C.short(pi.Events)
 	}
