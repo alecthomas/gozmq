@@ -89,7 +89,7 @@ const (
 	SNDBUF       = UInt64SocketOption(C.ZMQ_SNDBUF)
 	RCVBUF       = UInt64SocketOption(C.ZMQ_RCVBUF)
 	// Not documented. Probably? related to SNDMORE.
-	RCVMORE      = UInt64SocketOption(C.ZMQ_RCVMORE)
+	RCVMORE = UInt64SocketOption(C.ZMQ_RCVMORE)
 
 	// Send/recv options
 	NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
@@ -308,12 +308,12 @@ func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err os.Error) {
 
 // Send a multipart message.
 func (s *zmqSocket) SendMultipart(parts [][]byte, flags SendRecvOption) (err os.Error) {
-	for i := 0; i < len(parts) - 1; i++ {
-		if err = s.Send(parts[i], SNDMORE | flags); err != nil {
+	for i := 0; i < len(parts)-1; i++ {
+		if err = s.Send(parts[i], SNDMORE|flags); err != nil {
 			return
 		}
 	}
-	err = s.Send(parts[(len(parts) - 1)], flags)
+	err = s.Send(parts[(len(parts)-1)], flags)
 	return
 }
 
