@@ -200,15 +200,15 @@ func TestDevice(t *testing.T) {
 /*
 func TestMessageMemory(t *testing.T) {
 	// primarily to see if Send or Recv are leaking memory
-	
+
 	const MSG_SIZE = 1e6
 	const MSG_COUNT = 100 * 1000
-	
+
 	te := NewTestEnv(nil)
 	defer te.Close()
-	
+
 	data := make([]byte, MSG_SIZE)
-	
+
 	out := te.NewBoundSocket(PUSH, ADDRESS1)
 	in := te.NewConnectedSocket(PULL, ADDRESS1)
 
@@ -228,14 +228,14 @@ func doBenchmarkSendReceive(b *testing.B, size int, addr string) {
 	// using the testEnv wrappers
 	b.StopTimer()
 	data := make([]byte, size)
-	
+
 	te := NewTestEnv(nil)
 	defer te.Close()
 	b.StartTimer()
-	
+
 	out := te.NewBoundSocket(PUSH, ADDRESS1)
 	in := te.NewConnectedSocket(PULL, ADDRESS1)
-	
+
 	for i := 0; i < b.N; i++ {
 		te.Send(out, data, 0)
 		d2 := te.Recv(in, 0)
@@ -246,27 +246,27 @@ func doBenchmarkSendReceive(b *testing.B, size int, addr string) {
 }
 
 func BenchmarkSendReceive1Btcp(b *testing.B) {
-	doBenchmarkSendReceive(b,1,ADDRESS1)
+	doBenchmarkSendReceive(b, 1, ADDRESS1)
 }
 
 func BenchmarkSendReceive1KBtcp(b *testing.B) {
-	doBenchmarkSendReceive(b, 1e3,ADDRESS1)
+	doBenchmarkSendReceive(b, 1e3, ADDRESS1)
 }
 
 func BenchmarkSendReceive1MBtcp(b *testing.B) {
-	doBenchmarkSendReceive(b, 1e6,ADDRESS1)
+	doBenchmarkSendReceive(b, 1e6, ADDRESS1)
 }
 
 func BenchmarkSendReceive1Binproc(b *testing.B) {
-	doBenchmarkSendReceive(b,1, ADDRESS_INPROC)
+	doBenchmarkSendReceive(b, 1, ADDRESS_INPROC)
 }
 
 func BenchmarkSendReceive1KBinproc(b *testing.B) {
-	doBenchmarkSendReceive(b, 1e3,ADDRESS_INPROC)
+	doBenchmarkSendReceive(b, 1e3, ADDRESS_INPROC)
 }
 
 func BenchmarkSendReceive1MBinproc(b *testing.B) {
-	doBenchmarkSendReceive(b, 1e6,ADDRESS_INPROC)
+	doBenchmarkSendReceive(b, 1e6, ADDRESS_INPROC)
 }
 
 // A helper to make tests less verbose
