@@ -5,23 +5,8 @@
  * both operate on byte slices, allocating and freeing the memory
  * automatically. Currently this requires copying to/from C malloced memory,
  * but a future implementation may be able to avoid this to a certain extent.
- *
- * Multi-part messages are not supported at all.
- *
- * A note about memory management: it's not entirely clear from the 0mq
- * documentation how memory for zmq_msg_t and packet data is managed once 0mq
- * takes ownership. This module operates under the following (educated)
- * assumptions:
- *
- * - For zmq_msg_t structures references are not held beyond the duration of
- *   any function call.
- * - Packet data is reference counted. The count is incremented when a packet
- *   is queued for delivery to a destination (the inference being that for
- *   delivery to N destinations, the reference count will be incremented N
- *   times) and decremented once the packet has either been delivered or
- *   errored.
  */
-package zmq
+package gozmq
 
 /*
 #include <zmq.h>
@@ -36,12 +21,12 @@ import (
 	"unsafe"
 )
 
-type ZmqContext interface {
-	Socket(t SocketType) ZmqSocket
+type Context interface {
+	NewSocket(t SocketType) Socket
 	Close()
 }
 
-type ZmqSocket interface {
+type Socket interface {
 	Bind(address string) os.Error
 	Connect(address string) os.Error
 	Send(data []byte, flags SendRecvOption) os.Error
@@ -69,7 +54,7 @@ type StringSocketOption int
 type SendRecvOption int
 
 const (
-	// Socket types
+	// NewSocket types
 	PAIR = SocketType(C.ZMQ_PAIR)
 	PUB  = SocketType(C.ZMQ_PUB)
 	SUB  = SocketType(C.ZMQ_SUB)
@@ -80,7 +65,7 @@ const (
 	PULL = SocketType(C.ZMQ_PULL)
 	PUSH = SocketType(C.ZMQ_PUSH)
 
-	// Socket options
+	// NewSocket options
 	HWM          = UInt64SocketOption(C.ZMQ_HWM)
 	SWAP         = Int64SocketOption(C.ZMQ_SWAP)
 	AFFINITY     = UInt64SocketOption(C.ZMQ_AFFINITY)
@@ -138,7 +123,7 @@ type zmqContext struct {
 
 // Create a new context.
 // void *zmq_init (int io_threads);
-func Context() ZmqContext {
+func NewContext() Context {
 	// TODO Pass something useful here. Number of cores?
 	return &zmqContext{C.zmq_init(1)}
 }
@@ -155,7 +140,7 @@ func (c *zmqContext) Close() {
 
 // Create a new socket.
 // void *zmq_socket (void *context, int type);
-func (c *zmqContext) Socket(t SocketType) ZmqSocket {
+func (c *zmqContext) NewSocket(t SocketType) Socket {
 	return &zmqSocket{c: c, s: C.zmq_socket(c.c, C.int(t))}
 }
 
@@ -359,12 +344,12 @@ func (s *zmqSocket) apiSocket() unsafe.Pointer {
 	return s.s
 }
 
-// Item to poll for read/write events on, either a ZmqSocket or a file descriptor
+// Item to poll for read/write events on, either a Socket or a file descriptor
 type PollItem struct {
-	Socket  ZmqSocket  // socket to poll for events on 
-	Fd      int        // fd to poll for events on as returned from os.File.Fd() 
-	Events  PollEvents // event set to poll for
-	REvents PollEvents // events that were present
+	NewSocket Socket     // socket to poll for events on 
+	Fd        int        // fd to poll for events on as returned from os.File.Fd() 
+	Events    PollEvents // event set to poll for
+	REvents   PollEvents // events that were present
 }
 
 // a set of items to poll for events on
@@ -373,16 +358,9 @@ type PollItems []PollItem
 // Poll ZmqSockets and file descriptors for I/O readiness. Timeout is in
 // microseconds.
 func Poll(items []PollItem, timeout int64) (count int, err os.Error) {
-
-	// this could be a straight passthrough if the zmq interface returned 
-	// the zmqSocket directly rather than an interface. This would require
-	// making Socket
-	//   type unsafe.Pointer Socket
-	// and removing the finalizers from zmqSocket and zmqContext.
-
 	zitems := make([]C.zmq_pollitem_t, len(items))
 	for i, pi := range items {
-		zitems[i].socket = pi.Socket.apiSocket()
+		zitems[i].socket = pi.NewSocket.apiSocket()
 		zitems[i].fd = C.int(pi.Fd)
 		zitems[i].events = C.short(pi.Events)
 	}
@@ -399,7 +377,7 @@ func Poll(items []PollItem, timeout int64) (count int, err os.Error) {
 }
 
 // run a zmq_device passing messages between in and out
-func Device(t DeviceType, in, out ZmqSocket) os.Error {
+func Device(t DeviceType, in, out Socket) os.Error {
 	if C.zmq_device(C.int(t), in.apiSocket(), out.apiSocket()) != 0 {
 		return errno()
 	}

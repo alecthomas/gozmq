@@ -1,11 +1,11 @@
 package main
 
 import "fmt"
-import "zmq"
+import zmq "github.com/alecthomas/gozmq"
 
 func main() {
-	context := zmq.Context()
-	socket := context.Socket(zmq.REQ)
+	context := zmq.NewContext()
+	socket := context.NewSocket(zmq.REQ)
 	socket.Connect("tcp://127.0.0.1:5000")
 	socket.Connect("tcp://127.0.0.1:6000")
 

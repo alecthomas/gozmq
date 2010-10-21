@@ -14,7 +14,7 @@ and freeing the memory automatically. Currently this requires copying to/from C
 malloced memory, but a future implementation may be able to avoid this to a
 certain extent.
 
-Multi-part messages are not supported at all.
+All major features are supported: contexts, sockets, devices, and polls.
 
 Example
 -------
@@ -25,11 +25,11 @@ A simple echo server::
 
   package main
 
-  import "zmq"
+  import zmq "github.com/alecthomas/gozmq"
 
   func main() {
-    context := zmq.Context()
-    socket := context.Socket(zmq.REP)
+    context := zmq.NewContext()
+    socket := context.NewSocket(zmq.REP)
     socket.Bind("tcp://127.0.0.1:5000")
     socket.Bind("tcp://127.0.0.1:6000")
 
@@ -45,11 +45,11 @@ A simple client for the above server::
   package main
 
   import "fmt"
-  import "zmq"
+  import zmq "github.com/alecthomas/gozmq"
 
   func main() {
-    context := zmq.Context()
-    socket := context.Socket(zmq.REQ)
+    context := zmq.NewContext()
+    socket := context.NewSocket(zmq.REQ)
     socket.Connect("tcp://127.0.0.1:5000")
     socket.Connect("tcp://127.0.0.1:6000")
 
@@ -63,21 +63,6 @@ A simple client for the above server::
 
 Caveats
 =======
-
-Memory management
------------------
-It's not entirely clear from the 0mq documentation how memory for ``zmq_msg_t``
-and packet data is managed once 0mq takes ownership. After digging into the
-source a little, this package operates under the following (educated)
-assumptions:
-
-- References to ``zmq_msg_t`` structures are not held by the C API beyond the
-  duration of any function call.
-- Packet data is reference counted internally by the C API. The count is
-  incremented when a packet is queued for delivery to a destination (the
-  inference being that for delivery to N destinations, the reference count will
-  be incremented N times) and decremented once the packet has either been
-  delivered or errored.
 
 Thread safety
 -------------
@@ -97,12 +82,27 @@ complicating the implementation.
 For now I would suggest creation and all subsequent access to each socket be
 performed inside a single goroutine pinned with ``runtime.LockOSThread()``::
 
-  context := zmq.Context()
+  context := zmq.NewContext()
   go func () {
     runtime.LockOSThread()
+    defer runtime.UnlockOSThread()
 
-    socket := context.Socket(zmq.REQ)
+    socket := context.NewSocket(zmq.REQ)
     defer socket.Close()
     ... do stuff with socket
-    runtime.UnlockOSThread()
   }()
+
+Memory management
+-----------------
+It's not entirely clear from the 0mq documentation how memory for ``zmq_msg_t``
+and packet data is managed once 0mq takes ownership. After digging into the
+source a little, this package operates under the following (educated)
+assumptions:
+
+- References to ``zmq_msg_t`` structures are not held by the C API beyond the
+  duration of any function call.
+- Packet data is reference counted internally by the C API. The count is
+  incremented when a packet is queued for delivery to a destination (the
+  inference being that for delivery to N destinations, the reference count will
+  be incremented N times) and decremented once the packet has either been
+  delivered or errored.

@@ -1,7 +1,8 @@
-package zmq
+package gozmq
 
 import (
 	"fmt"
+	"log"
 	"runtime"
 	"testing"
 	"time"
@@ -22,12 +23,12 @@ const ADDRESS_INPROC = "inproc://test"
 
 const SERVER_READY = "SERVER READY"
 
-func runServer(t *testing.T, c ZmqContext, callback func(s ZmqSocket)) chan bool {
+func runServer(t *testing.T, c Context, callback func(s Socket)) chan bool {
 	finished := make(chan bool)
 	go func() {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
-		s := c.Socket(REP)
+		s := c.NewSocket(REP)
 		defer s.Close()
 		if rc := s.Bind(ADDRESS1); rc != nil {
 			t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
@@ -49,9 +50,9 @@ func runPollServer(t *testing.T) (done, bound chan bool) {
 		s3 := te.NewBoundSocket(REP, ADDRESS3)
 
 		pi := PollItems{
-			PollItem{Socket: s1, Events: POLLIN},
-			PollItem{Socket: s2, Events: POLLIN},
-			PollItem{Socket: s3, Events: POLLIN},
+			PollItem{NewSocket: s1, Events: POLLIN},
+			PollItem{NewSocket: s2, Events: POLLIN},
+			PollItem{NewSocket: s3, Events: POLLIN},
 		}
 		bound <- true
 
@@ -65,16 +66,16 @@ func runPollServer(t *testing.T) (done, bound chan bool) {
 
 			switch {
 			case pi[0].REvents&POLLIN != 0:
-				pi[0].Socket.Recv(0) // eat the incoming message
-				pi[0].Socket.Send(nil, 0)
+				pi[0].NewSocket.Recv(0) // eat the incoming message
+				pi[0].NewSocket.Send(nil, 0)
 				sent++
 			case pi[1].REvents&POLLIN != 0:
-				pi[1].Socket.Recv(0) // eat the incoming message
-				pi[1].Socket.Send(nil, 0)
+				pi[1].NewSocket.Recv(0) // eat the incoming message
+				pi[1].NewSocket.Send(nil, 0)
 				sent++
 			case pi[2].REvents&POLLIN != 0:
-				pi[2].Socket.Recv(0) // eat the incoming message
-				pi[2].Socket.Send(nil, 0)
+				pi[2].NewSocket.Recv(0) // eat the incoming message
+				pi[2].NewSocket.Send(nil, 0)
 				sent++
 			}
 
@@ -97,16 +98,16 @@ func TestVersion(t *testing.T) {
 }
 
 func TestCreateDestroyContext(t *testing.T) {
-	c := Context()
+	c := NewContext()
 	c.Close()
-	c = Context()
+	c = NewContext()
 	c.Close()
 }
 
 func TestBindToLoopBack(t *testing.T) {
-	c := Context()
+	c := NewContext()
 	defer c.Close()
-	s := c.Socket(REP)
+	s := c.NewSocket(REP)
 	defer s.Close()
 	if rc := s.Bind(ADDRESS1); rc != nil {
 		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
@@ -114,9 +115,9 @@ func TestBindToLoopBack(t *testing.T) {
 }
 
 func TestSetSockOptString(t *testing.T) {
-	c := Context()
+	c := NewContext()
 	defer c.Close()
-	s := c.Socket(SUB)
+	s := c.NewSocket(SUB)
 	defer s.Close()
 	if rc := s.Bind(ADDRESS1); rc != nil {
 		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
@@ -127,9 +128,9 @@ func TestSetSockOptString(t *testing.T) {
 }
 
 func TestMultipart(t *testing.T) {
-	c := Context()
+	c := NewContext()
 	defer c.Close()
-	finished := runServer(t, c, func(s ZmqSocket) {
+	finished := runServer(t, c, func(s Socket) {
 		parts, rc := s.RecvMultipart(0)
 		if rc != nil {
 			t.Errorf("Failed to receive multipart message; %s", rc.String())
@@ -142,7 +143,7 @@ func TestMultipart(t *testing.T) {
 		}
 	})
 
-	s := c.Socket(REQ)
+	s := c.NewSocket(REQ)
 	defer s.Close()
 	if rc := s.Connect(ADDRESS1); rc != nil {
 		t.Errorf("Failed to connect to %s; %s", ADDRESS1, rc.String())
@@ -271,7 +272,7 @@ func BenchmarkSendReceive1MBinproc(b *testing.B) {
 
 // A helper to make tests less verbose
 type testEnv struct {
-	context ZmqContext
+	context Context
 	sockets vector.Vector
 	t       *testing.T
 }
@@ -280,25 +281,25 @@ func NewTestEnv(t *testing.T) *testEnv {
 	// Encapsulate everything, including (unnecessarily) the context
 	// in the same thread.
 	runtime.LockOSThread()
-	return &testEnv{context: Context(), t: t}
+	return &testEnv{context: NewContext(), t: t}
 }
 
-func (te *testEnv) NewBoundSocket(t SocketType, bindAddr string) ZmqSocket {
+func (te *testEnv) NewBoundSocket(t SocketType, bindAddr string) Socket {
 
-	s := te.context.Socket(t)
+	s := te.context.NewSocket(t)
 	if err := s.Bind(bindAddr); err != nil {
-		Panicf("Failed to connect to %v: %v", bindAddr, err)
+		log.Panicf("Failed to connect to %v: %v", bindAddr, err)
 	}
 
 	te.sockets.Push(s)
 	return s
 }
 
-func (te *testEnv) NewConnectedSocket(t SocketType, connectAddr string) ZmqSocket {
+func (te *testEnv) NewConnectedSocket(t SocketType, connectAddr string) Socket {
 
-	s := te.context.Socket(t)
+	s := te.context.NewSocket(t)
 	if err := s.Connect(connectAddr); err != nil {
-		Panicf("Failed to connect to %v: %v", connectAddr, err)
+		log.Panicf("Failed to connect to %v: %v", connectAddr, err)
 	}
 
 	te.sockets.Push(s)
@@ -313,11 +314,11 @@ func (te *testEnv) Close() {
 	}
 
 	for _, v := range te.sockets {
-		s, ok := v.(ZmqSocket)
+		s, ok := v.(Socket)
 		if ok {
 			s.Close()
 		} else {
-			te.t.Errorf("found something that is not a ZmqSocket: %v", v)
+			te.t.Errorf("found something that is not a Socket: %v", v)
 		}
 	}
 
@@ -327,17 +328,13 @@ func (te *testEnv) Close() {
 	runtime.UnlockOSThread()
 }
 
-func Panicf(format string, args ...interface{}) {
-	panic(fmt.Sprintf(format, args...))
-}
-
-func (te *testEnv) Send(sock ZmqSocket, data []byte, flags SendRecvOption) {
+func (te *testEnv) Send(sock Socket, data []byte, flags SendRecvOption) {
 	if err := sock.Send(data, flags); err != nil {
 		te.t.Errorf("Send failed")
 	}
 }
 
-func (te *testEnv) Recv(sock ZmqSocket, flags SendRecvOption) []byte {
+func (te *testEnv) Recv(sock Socket, flags SendRecvOption) []byte {
 	data, err := sock.Recv(flags)
 	if err != nil {
 		te.t.Errorf("Receive failed")
