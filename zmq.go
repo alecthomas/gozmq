@@ -371,8 +371,8 @@ type PollItem struct {
 // a set of items to poll for events on
 type PollItems []PollItem
 
-// Poll ZmqSockets and file descriptors for I/O readiness
-// timeout is in microseconds
+// Poll ZmqSockets and file descriptors for I/O readiness. Timeout is in
+// microseconds.
 func Poll(items []PollItem, timeout int64) (count int, err os.Error) {
 
 	// this could be a straight passthrough if the zmq interface returned 
