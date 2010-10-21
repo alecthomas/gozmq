@@ -56,6 +56,10 @@ type ZmqSocket interface {
 	GetSockOptInt64(option Int64SocketOption) (value int64, err os.Error)
 	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err os.Error)
 	GetSockOptString(option StringSocketOption) (value string, err os.Error)
+
+	// Package local function makes this interface unimplementable outside
+	// of this package which removes some of the point of using an interface
+	apiSocket() unsafe.Pointer
 }
 
 type SocketType int
@@ -97,13 +101,21 @@ const (
 	SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
 )
 
+type PollEvents C.short
 
-/*
- * Misc functions
- */
-// TODO int zmq_poll (zmq_pollitem_t *items, int nitems, long timeout);
-// TODO int zmq_device (int device, void * insocket, void* outsocket);
+const (
+	POLLIN  = PollEvents(C.ZMQ_POLLIN)
+	POLLOUT = PollEvents(C.ZMQ_POLLOUT)
+	POLLERR = PollEvents(C.ZMQ_POLLERR)
+)
 
+type DeviceType int
+
+const (
+	STREAMER  = DeviceType(C.ZMQ_STREAMER)
+	FORWARDER = DeviceType(C.ZMQ_FORWARDER)
+	QUEUE     = DeviceType(C.ZMQ_QUEUE)
+)
 
 // void zmq_version (int *major, int *minor, int *patch);
 func Version() (int, int, int) {
@@ -134,6 +146,7 @@ func Context() ZmqContext {
 
 // int zmq_term (void *context);
 func (c *zmqContext) destroy() {
+	// Will this get called without being added by runtime.SetFinalizer()?
 	c.Close()
 }
 
@@ -164,6 +177,7 @@ func (s *zmqSocket) Close() os.Error {
 }
 
 func (s *zmqSocket) destroy() {
+	// Will this get called without being added by runtime.SetFinalizer()?
 	if err := s.Close(); err != nil {
 		panic("Error while destroying zmqSocket: " + err.String() + "\n")
 	}
@@ -341,6 +355,57 @@ func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err os.
 	return
 }
 
+// return the 
+func (s *zmqSocket) apiSocket() unsafe.Pointer {
+	return s.s
+}
+
+// Item to poll for read/write events on, either a ZmqSocket or a file descriptor
+type PollItem struct {
+	Socket  ZmqSocket  // socket to poll for events on 
+	Fd      int        // fd to poll for events on as returned from os.File.Fd() 
+	Events  PollEvents // event set to poll for
+	REvents PollEvents // events that were present
+}
+
+// a set of items to poll for events on
+type PollItems []PollItem
+
+// Poll ZmqSockets and file descriptors for I/O readiness
+// timeout is in microseconds
+func Poll(items []PollItem, timeout int64) (count int, err os.Error) {
+
+	// this could be a straight passthrough if the zmq interface returned 
+	// the zmqSocket directly rather than an interface. This would require
+	// making Socket
+	//   type unsafe.Pointer Socket
+	// and removing the finalizers from zmqSocket and zmqContext.
+
+	zitems := make([]C.zmq_pollitem_t, len(items))
+	for i, pi := range items {
+		zitems[i].socket = pi.Socket.apiSocket()
+		zitems[i].fd = C.int(pi.Fd)
+		zitems[i].events = C.short(pi.Events)
+	}
+	rc := int(C.zmq_poll(&zitems[0], C.int(len(zitems)), C.long(timeout)))
+	if rc == -1 {
+		return 0, errno()
+	}
+
+	for i, zi := range zitems {
+		items[i].REvents = PollEvents(zi.revents)
+	}
+
+	return rc, nil
+}
+
+// run a zmq_device passing messages between in and out
+func Device(t DeviceType, in, out ZmqSocket) os.Error {
+	if C.zmq_device(C.int(t), in.apiSocket(), out.apiSocket()) != 0 {
+		return errno()
+	}
+	return os.NewError("zmq_device() returned unexpectedly.")
+}
 
 // XXX For now, this library abstracts zmq_msg_t out of the API.
 // int zmq_msg_init (zmq_msg_t *msg);
