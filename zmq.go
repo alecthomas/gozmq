@@ -22,7 +22,7 @@ import (
 )
 
 type Context interface {
-	NewSocket(t SocketType) Socket
+	NewSocket(t SocketType) (Socket, os.Error)
 	Close()
 }
 
@@ -123,9 +123,13 @@ type zmqContext struct {
 
 // Create a new context.
 // void *zmq_init (int io_threads);
-func NewContext() Context {
+func NewContext() (Context, os.Error) {
 	// TODO Pass something useful here. Number of cores?
-	return &zmqContext{C.zmq_init(1)}
+	// C.NULL is correct but causes a runtime failure on darwin at present
+	if c := C.zmq_init(1); c != unsafe.Pointer(uintptr(0))/*C.NULL*/ {
+		return &zmqContext{c}, nil
+	}
+	return nil, errno()	
 }
 
 // int zmq_term (void *context);
@@ -140,8 +144,12 @@ func (c *zmqContext) Close() {
 
 // Create a new socket.
 // void *zmq_socket (void *context, int type);
-func (c *zmqContext) NewSocket(t SocketType) Socket {
-	return &zmqSocket{c: c, s: C.zmq_socket(c.c, C.int(t))}
+func (c *zmqContext) NewSocket(t SocketType) (Socket, os.Error) {
+	// C.NULL is correct but causes a runtime failure on darwin at present
+	if s:=  C.zmq_socket(c.c, C.int(t)); s != unsafe.Pointer(uintptr(0))/*C.NULL*/ {
+		return &zmqSocket{c: c, s:s}, nil
+	}
+	return nil, errno()
 }
 
 type zmqSocket struct {

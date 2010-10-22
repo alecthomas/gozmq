@@ -27,7 +27,7 @@ func runServer(t *testing.T, c Context, callback func(s Socket)) chan bool {
 	go func() {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
-		s := c.NewSocket(REP)
+		s, _ := c.NewSocket(REP)
 		defer s.Close()
 		if rc := s.Bind(ADDRESS1); rc != nil {
 			t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
@@ -97,16 +97,16 @@ func TestVersion(t *testing.T) {
 }
 
 func TestCreateDestroyContext(t *testing.T) {
-	c := NewContext()
+	c, _ := NewContext()
 	c.Close()
-	c = NewContext()
+	c, _ = NewContext()
 	c.Close()
 }
 
 func TestBindToLoopBack(t *testing.T) {
-	c := NewContext()
+	c, _ := NewContext()
 	defer c.Close()
-	s := c.NewSocket(REP)
+	s, _ := c.NewSocket(REP)
 	defer s.Close()
 	if rc := s.Bind(ADDRESS1); rc != nil {
 		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
@@ -114,9 +114,9 @@ func TestBindToLoopBack(t *testing.T) {
 }
 
 func TestSetSockOptString(t *testing.T) {
-	c := NewContext()
+	c, _ := NewContext()
 	defer c.Close()
-	s := c.NewSocket(SUB)
+	s, _ := c.NewSocket(SUB)
 	defer s.Close()
 	if rc := s.Bind(ADDRESS1); rc != nil {
 		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
@@ -127,7 +127,7 @@ func TestSetSockOptString(t *testing.T) {
 }
 
 func TestMultipart(t *testing.T) {
-	c := NewContext()
+	c, _ := NewContext()
 	defer c.Close()
 	finished := runServer(t, c, func(s Socket) {
 		parts, rc := s.RecvMultipart(0)
@@ -142,7 +142,7 @@ func TestMultipart(t *testing.T) {
 		}
 	})
 
-	s := c.NewSocket(REQ)
+	s, _ := c.NewSocket(REQ)
 	defer s.Close()
 	if rc := s.Connect(ADDRESS1); rc != nil {
 		t.Errorf("Failed to connect to %s; %s", ADDRESS1, rc.String())
@@ -280,32 +280,39 @@ func NewTestEnv(t *testing.T) *testEnv {
 	// Encapsulate everything, including (unnecessarily) the context
 	// in the same thread.
 	runtime.LockOSThread()
-	return &testEnv{context: NewContext(), t: t}
+	c, err := NewContext()
+	if err != nil {
+		t.Errorf("failed to create context in testEnv: %v", err)
+		t.FailNow()
+	}
+	return &testEnv{context: c, t: t}
+}
+
+func (te *testEnv) NewSocket(t SocketType) Socket {
+	s, err := te.context.NewSocket(t)
+	if err != nil {
+		log.Panicf("Failed to Create socket of type %v: %v", t, err)		
+	}
+	return s
 }
 
 func (te *testEnv) NewBoundSocket(t SocketType, bindAddr string) Socket {
-
-	s := te.context.NewSocket(t)
+	s := te.NewSocket(t)
 	if err := s.Bind(bindAddr); err != nil {
 		log.Panicf("Failed to connect to %v: %v", bindAddr, err)
 	}
-
 	te.sockets.Push(s)
 	return s
 }
 
 func (te *testEnv) NewConnectedSocket(t SocketType, connectAddr string) Socket {
-
-	s := te.context.NewSocket(t)
+	s := te.NewSocket(t)
 	if err := s.Connect(connectAddr); err != nil {
 		log.Panicf("Failed to connect to %v: %v", connectAddr, err)
 	}
-
 	te.sockets.Push(s)
 	return s
-
 }
-
 func (te *testEnv) Close() {
 
 	if err := recover(); err != nil {
