@@ -8,11 +8,12 @@ Note that this is *not* the same as `this implementation
 
 Installing
 ==========
-Install gozmq with the following commands. This requires a couple of extra steps because it uses Go's C interface which goinstall does not handle yet.
+Install gozmq with the following commands. This requires a couple of extra
+steps because it uses Go's C interface which goinstall does not handle yet.
 Ignore the message goinstall: C: open ...: no such file or directory
 ::
 
-	goinstall github.com/alecthomas/gozero
+	goinstall github.com/alecthomas/gozmq
 	pushd $GOROOT/src/pkg/github.com/alecthomas/gozmq
 	make install
 	popd

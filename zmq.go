@@ -126,7 +126,7 @@ type zmqContext struct {
 func NewContext() (Context, os.Error) {
 	// TODO Pass something useful here. Number of cores?
 	// C.NULL is correct but causes a runtime failure on darwin at present
-	if c := C.zmq_init(1); c != unsafe.Pointer(uintptr(0)) /*C.NULL*/ {
+	if c := C.zmq_init(1); c != nil /*C.NULL*/ {
 		return &zmqContext{c}, nil
 	}
 	return nil, errno()
@@ -146,7 +146,7 @@ func (c *zmqContext) Close() {
 // void *zmq_socket (void *context, int type);
 func (c *zmqContext) NewSocket(t SocketType) (Socket, os.Error) {
 	// C.NULL is correct but causes a runtime failure on darwin at present
-	if s := C.zmq_socket(c.c, C.int(t)); s != unsafe.Pointer(uintptr(0)) /*C.NULL*/ {
+	if s := C.zmq_socket(c.c, C.int(t)); s != nil /*C.NULL*/ {
 		return &zmqSocket{c: c, s: s}, nil
 	}
 	return nil, errno()
