@@ -291,7 +291,7 @@ func NewTestEnv(t *testing.T) *testEnv {
 func (te *testEnv) NewSocket(t SocketType) Socket {
 	s, err := te.context.NewSocket(t)
 	if err != nil {
-		log.Panicf("Failed to Create socket of type %v: %v", t, err)		
+		log.Panicf("Failed to Create socket of type %v: %v", t, err)
 	}
 	return s
 }

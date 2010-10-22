@@ -126,10 +126,10 @@ type zmqContext struct {
 func NewContext() (Context, os.Error) {
 	// TODO Pass something useful here. Number of cores?
 	// C.NULL is correct but causes a runtime failure on darwin at present
-	if c := C.zmq_init(1); c != unsafe.Pointer(uintptr(0))/*C.NULL*/ {
+	if c := C.zmq_init(1); c != unsafe.Pointer(uintptr(0)) /*C.NULL*/ {
 		return &zmqContext{c}, nil
 	}
-	return nil, errno()	
+	return nil, errno()
 }
 
 // int zmq_term (void *context);
@@ -146,8 +146,8 @@ func (c *zmqContext) Close() {
 // void *zmq_socket (void *context, int type);
 func (c *zmqContext) NewSocket(t SocketType) (Socket, os.Error) {
 	// C.NULL is correct but causes a runtime failure on darwin at present
-	if s:=  C.zmq_socket(c.c, C.int(t)); s != unsafe.Pointer(uintptr(0))/*C.NULL*/ {
-		return &zmqSocket{c: c, s:s}, nil
+	if s := C.zmq_socket(c.c, C.int(t)); s != unsafe.Pointer(uintptr(0)) /*C.NULL*/ {
+		return &zmqSocket{c: c, s: s}, nil
 	}
 	return nil, errno()
 }
@@ -354,10 +354,10 @@ func (s *zmqSocket) apiSocket() unsafe.Pointer {
 
 // Item to poll for read/write events on, either a Socket or a file descriptor
 type PollItem struct {
-	Socket    Socket     // socket to poll for events on 
-	Fd        int        // fd to poll for events on as returned from os.File.Fd() 
-	Events    PollEvents // event set to poll for
-	REvents   PollEvents // events that were present
+	Socket  Socket     // socket to poll for events on 
+	Fd      int        // fd to poll for events on as returned from os.File.Fd() 
+	Events  PollEvents // event set to poll for
+	REvents PollEvents // events that were present
 }
 
 // a set of items to poll for events on
