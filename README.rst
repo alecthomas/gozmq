@@ -6,6 +6,17 @@ This package implements `Go <http://golang.org>`_ bindings for the `0mq
 Note that this is *not* the same as `this implementation
 <http://github.com/boggle/gozero>`_.
 
+Installing
+==========
+Install gozmq with the following commands. This requires a couple of extra steps because it uses Go's C interface which goinstall does not handle yet.
+Ignore the message goinstall: C: open ...: no such file or directory
+::
+
+	goinstall github.com/alecthomas/gozero
+	pushd $GOROOT/src/pkg/github.com/alecthomas/gozmq
+	make install
+	popd
+
 Differences from the C API
 ==========================
 The API implemented by this package does not attempt to expose ``zmq_msg_t`` at
