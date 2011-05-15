@@ -328,6 +328,7 @@ func (te *testEnv) NewConnectedSocket(t SocketType, connectAddr string) Socket {
 	te.sockets.Push(s)
 	return s
 }
+
 func (te *testEnv) Close() {
 
 	if err := recover(); err != nil {
