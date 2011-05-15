@@ -40,8 +40,8 @@ A simple echo server::
   import zmq "github.com/alecthomas/gozmq"
 
   func main() {
-    context := zmq.NewContext()
-    socket := context.NewSocket(zmq.REP)
+    context, _ := zmq.NewContext()
+    socket, _ := context.NewSocket(zmq.REP)
     socket.Bind("tcp://127.0.0.1:5000")
     socket.Bind("tcp://127.0.0.1:6000")
 
@@ -60,8 +60,8 @@ A simple client for the above server::
   import zmq "github.com/alecthomas/gozmq"
 
   func main() {
-    context := zmq.NewContext()
-    socket := context.NewSocket(zmq.REQ)
+    context, _ := zmq.NewContext()
+    socket, _ := context.NewSocket(zmq.REQ)
     socket.Connect("tcp://127.0.0.1:5000")
     socket.Connect("tcp://127.0.0.1:6000")
 
