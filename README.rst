@@ -9,14 +9,13 @@ Note that this is *not* the same as `this implementation
 Installing
 ==========
 Install gozmq with the following commands. This requires a couple of extra
-steps because it uses Go's C interface which goinstall does not handle yet.
-Ignore the message goinstall: C: open ...: no such file or directory
+steps because it uses Go's C interface, which goinstall does not handle yet.
 ::
 
-	goinstall github.com/alecthomas/gozmq
-	pushd $GOROOT/src/pkg/github.com/alecthomas/gozmq
-	make install
-	popd
+  git clone git://github.com/alecthomas/gozmq.git
+  cd gozmq
+  gomake install
+  popd
 
 Differences from the C API
 ==========================
@@ -76,9 +75,13 @@ A simple client for the above server::
 Caveats
 =======
 
-Thread safety
--------------
-The `0mq API <http://api.zeromq.org>`_ warns:
+Thread safety in 0MQ versions < 2.1.0
+-------------------------------------
+
+*If you are using 0MQ 2.1.0 or newer, gozmq should "just work". You can ignore
+this section.*
+
+The `0mq API <http://api.zeromq.org>`_ prior to 2.1.0 warns:
 
   Each ØMQ socket belonging to a particular context may only be used by **the
   thread that created it** using ``zmq_socket()``.
