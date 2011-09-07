@@ -69,6 +69,8 @@ type Int64SocketOption int
 type UInt64SocketOption int
 type StringSocketOption int
 type SendRecvOption int
+type zmqErrno os.Errno
+
 
 const (
 	// NewSocket types
@@ -100,6 +102,12 @@ const (
 	// Send/recv options
 	NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
 	SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
+
+	// Additional ZMQ errors
+	EFSM           = zmqErrno(C.EFSM)
+	ENOCOMPATPROTO = zmqErrno(C.ENOCOMPATPROTO)
+	ETERM          = zmqErrno(C.ETERM)
+	EMTHREAD       = zmqErrno(C.EMTHREAD)
 )
 
 type PollEvents C.short
@@ -125,9 +133,14 @@ func Version() (int, int, int) {
 	return int(major), int(minor), int(patch)
 }
 
+
+func (e zmqErrno) String() string {
+	return C.GoString(C.zmq_strerror(C.int(e)))
+}
+
 // int zmq_errno ();
 func errno() os.Error {
-	return os.Errno(C.zmq_errno())
+	return zmqErrno(C.zmq_errno())
 }
 
 /*
@@ -344,12 +357,15 @@ func (s *zmqSocket) SendMultipart(parts [][]byte, flags SendRecvOption) (err os.
 func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err os.Error) {
 	buffer := new(vector.Vector)
 	for {
-		data, err := s.Recv(flags)
+		var data []byte
+		var more uint64
+
+		data, err = s.Recv(flags)
 		if err != nil {
 			return
 		}
 		buffer.Push(data)
-		more, err := s.GetSockOptUInt64(RCVMORE)
+		more, err = s.GetSockOptUInt64(RCVMORE)
 		if err != nil {
 			return
 		}

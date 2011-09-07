@@ -17,6 +17,7 @@ package gozmq
 
 import (
 	"log"
+	"os"
 	"runtime"
 	"testing"
 	"time"
@@ -208,6 +209,14 @@ func TestDevice(t *testing.T) {
 
 	te.Send(out, nil, 0)
 	te.Recv(in, 0)
+}
+
+func TestZmqErrorStr(t *testing.T) {
+	var e os.Error = EFSM
+	es := e.String()
+	if es != "Operation cannot be accomplished in current state" {
+		t.Errorf("EFSM.String() returned unexpected result: %s", e)
+	}
 }
 
 // expensive test - send a huge amount of data. should be enough to
