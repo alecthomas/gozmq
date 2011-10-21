@@ -8,9 +8,12 @@ Note that this is *not* the same as `this implementation
 
 Installing
 ==========
-Install gozmq with the following commands. This requires a couple of extra
-steps because it uses Go's C interface, which goinstall does not handle yet.
-::
+Install gozmq with::
+
+  goinstall github.com/alecthomas/gozmq
+
+If that doesn't work you might need to checkout the source and play with the
+CGO_LDFLAGS and CGO_CFLAGS in the Makefile::
 
   git clone git://github.com/alecthomas/gozmq.git
   cd gozmq

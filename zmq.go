@@ -26,7 +26,8 @@
 package gozmq
 
 /*
-#cgo LDFLAGS: -lzmq
+#cgo CFLAGS: -I/usr/local/include
+#cgo LDFLAGS: -L/usr/local/lib -lzmq
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>
