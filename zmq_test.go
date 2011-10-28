@@ -21,7 +21,6 @@ import (
 	"runtime"
 	"testing"
 	"time"
-	"container/vector"
 )
 
 const ADDRESS1 = "tcp://127.0.0.1:23456"
@@ -296,7 +295,7 @@ func BenchmarkSendReceive1MBinproc(b *testing.B) {
 // A helper to make tests less verbose
 type testEnv struct {
 	context Context
-	sockets vector.Vector
+	sockets []Socket
 	t       *testing.T
 }
 
@@ -325,7 +324,7 @@ func (te *testEnv) NewBoundSocket(t SocketType, bindAddr string) Socket {
 	if err := s.Bind(bindAddr); err != nil {
 		log.Panicf("Failed to connect to %v: %v", bindAddr, err)
 	}
-	te.sockets.Push(s)
+	te.pushSocket(s)
 	return s
 }
 
@@ -334,8 +333,12 @@ func (te *testEnv) NewConnectedSocket(t SocketType, connectAddr string) Socket {
 	if err := s.Connect(connectAddr); err != nil {
 		log.Panicf("Failed to connect to %v: %v", connectAddr, err)
 	}
-	te.sockets.Push(s)
+	te.pushSocket(s)
 	return s
+}
+
+func (te *testEnv) pushSocket(s Socket) {
+	te.sockets = append(te.sockets, s)
 }
 
 func (te *testEnv) Close() {
@@ -344,13 +347,8 @@ func (te *testEnv) Close() {
 		te.t.Errorf("failed in testEnv: %v", err)
 	}
 
-	for _, v := range te.sockets {
-		s, ok := v.(Socket)
-		if ok {
-			s.Close()
-		} else {
-			te.t.Errorf("found something that is not a Socket: %v", v)
-		}
+	for _, s := range te.sockets {
+		s.Close()
 	}
 
 	if te.context != nil {
@@ -373,11 +371,9 @@ func (te *testEnv) Recv(sock Socket, flags SendRecvOption) []byte {
 	return data
 }
 
-
 // TODO Test various socket types. UDP, TCP, etc.
 // TODO Test NOBLOCK mode.
 // TODO Test getting/setting socket options. Probably sufficient to do just one
 // int and one string test.
-
 
 // TODO Test that closing a context underneath a socket behaves "reasonably" (ie. doesnt' crash).
