@@ -14,7 +14,6 @@
   limitations under the License.
 */
 
-
 //
 // This package implements Go bindings for the 0mq C API.
 //
@@ -35,7 +34,6 @@ package gozmq
 import "C"
 
 import (
-	"container/vector"
 	"os"
 	"unsafe"
 )
@@ -72,7 +70,6 @@ type UInt64SocketOption int
 type StringSocketOption int
 type SendRecvOption int
 type zmqErrno os.Errno
-
 
 const (
 	// NewSocket types
@@ -134,7 +131,6 @@ func Version() (int, int, int) {
 	C.zmq_version(&major, &minor, &patch)
 	return int(major), int(minor), int(patch)
 }
-
 
 func (e zmqErrno) String() string {
 	return C.GoString(C.zmq_strerror(C.int(e)))
@@ -357,7 +353,7 @@ func (s *zmqSocket) SendMultipart(parts [][]byte, flags SendRecvOption) (err os.
 
 // Receive a multipart message.
 func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err os.Error) {
-	buffer := new(vector.Vector)
+	parts = make([][]byte, 0)
 	for {
 		var data []byte
 		var more uint64
@@ -366,7 +362,7 @@ func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err os.
 		if err != nil {
 			return
 		}
-		buffer.Push(data)
+		parts = append(parts, data)
 		more, err = s.GetSockOptUInt64(RCVMORE)
 		if err != nil {
 			return
@@ -374,10 +370,6 @@ func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err os.
 		if more == 0 {
 			break
 		}
-	}
-	parts = make([][]byte, buffer.Len())
-	for i := 0; i < buffer.Len(); i++ {
-		parts[i] = []byte(buffer.At(i).([]byte))
 	}
 	return
 }
