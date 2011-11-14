@@ -17,7 +17,6 @@ package gozmq
 
 import (
 	"log"
-	"os"
 	"runtime"
 	"testing"
 	"time"
@@ -45,7 +44,7 @@ func runServer(t *testing.T, c Context, callback func(s Socket)) chan bool {
 		s, _ := c.NewSocket(REP)
 		defer s.Close()
 		if rc := s.Bind(ADDRESS1); rc != nil {
-			t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
+			t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.Error())
 		}
 		callback(s)
 		finished <- true
@@ -124,7 +123,7 @@ func TestBindToLoopBack(t *testing.T) {
 	s, _ := c.NewSocket(REP)
 	defer s.Close()
 	if rc := s.Bind(ADDRESS1); rc != nil {
-		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
+		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.Error())
 	}
 }
 
@@ -134,7 +133,7 @@ func TestSetSockOptString(t *testing.T) {
 	s, _ := c.NewSocket(SUB)
 	defer s.Close()
 	if rc := s.Bind(ADDRESS1); rc != nil {
-		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.String())
+		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.Error())
 	}
 	if rc := s.SetSockOptString(SUBSCRIBE, "TEST"); rc != nil {
 		t.Errorf("Failed to subscribe; %v", rc)
@@ -147,7 +146,7 @@ func TestMultipart(t *testing.T) {
 	finished := runServer(t, c, func(s Socket) {
 		parts, rc := s.RecvMultipart(0)
 		if rc != nil {
-			t.Errorf("Failed to receive multipart message; %s", rc.String())
+			t.Errorf("Failed to receive multipart message; %s", rc.Error())
 		}
 		if len(parts) != 2 {
 			t.Errorf("Invalid multipart message, not enough parts; %d", len(parts))
@@ -160,10 +159,10 @@ func TestMultipart(t *testing.T) {
 	s, _ := c.NewSocket(REQ)
 	defer s.Close()
 	if rc := s.Connect(ADDRESS1); rc != nil {
-		t.Errorf("Failed to connect to %s; %s", ADDRESS1, rc.String())
+		t.Errorf("Failed to connect to %s; %s", ADDRESS1, rc.Error())
 	}
 	if rc := s.SendMultipart([][]byte{[]byte("part1"), []byte("part2")}, 0); rc != nil {
-		t.Errorf("Failed to send multipart message; %s", rc.String())
+		t.Errorf("Failed to send multipart message; %s", rc.Error())
 	}
 	<-finished
 }
@@ -211,8 +210,8 @@ func TestDevice(t *testing.T) {
 }
 
 func TestZmqErrorStr(t *testing.T) {
-	var e os.Error = EFSM
-	es := e.String()
+	var e error = EFSM
+	es := e.Error()
 	if es != "Operation cannot be accomplished in current state" {
 		t.Errorf("EFSM.String() returned unexpected result: %s", e)
 	}
