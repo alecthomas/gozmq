@@ -74,30 +74,45 @@ type zmqErrno os.Errno
 
 const (
 	// NewSocket types
-	PAIR = SocketType(C.ZMQ_PAIR)
-	PUB  = SocketType(C.ZMQ_PUB)
-	SUB  = SocketType(C.ZMQ_SUB)
-	REQ  = SocketType(C.ZMQ_REQ)
-	REP  = SocketType(C.ZMQ_REP)
-	XREQ = SocketType(C.ZMQ_XREQ)
-	XREP = SocketType(C.ZMQ_XREP)
-	PULL = SocketType(C.ZMQ_PULL)
-	PUSH = SocketType(C.ZMQ_PUSH)
+	PAIR   = SocketType(C.ZMQ_PAIR)
+	PUB    = SocketType(C.ZMQ_PUB)
+	SUB    = SocketType(C.ZMQ_SUB)
+	REQ    = SocketType(C.ZMQ_REQ)
+	REP    = SocketType(C.ZMQ_REP)
+	DEALER = SocketType(C.ZMQ_DEALER)
+	ROUTER = SocketType(C.ZMQ_ROUTER)
+	PULL   = SocketType(C.ZMQ_PULL)
+	PUSH   = SocketType(C.ZMQ_PUSH)
+	XPUB   = SocketType(C.ZMQ_XPUB)
+	XSUB   = SocketType(C.ZMQ_XSUB)
+
+	// Deprecated aliases
+	XREQ       = DEALER
+	XREP       = ROUTER
+	UPSTREAM   = PULL
+	DOWNSTREAM = PUSH
 
 	// NewSocket options
-	HWM          = UInt64SocketOption(C.ZMQ_HWM)
-	SWAP         = Int64SocketOption(C.ZMQ_SWAP)
-	AFFINITY     = UInt64SocketOption(C.ZMQ_AFFINITY)
-	IDENTITY     = StringSocketOption(C.ZMQ_IDENTITY)
-	SUBSCRIBE    = StringSocketOption(C.ZMQ_SUBSCRIBE)
-	UNSUBSCRIBE  = StringSocketOption(C.ZMQ_UNSUBSCRIBE)
-	RATE         = Int64SocketOption(C.ZMQ_RATE)
-	RECOVERY_IVL = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
-	MCAST_LOOP   = Int64SocketOption(C.ZMQ_MCAST_LOOP)
-	SNDBUF       = UInt64SocketOption(C.ZMQ_SNDBUF)
-	RCVBUF       = UInt64SocketOption(C.ZMQ_RCVBUF)
-
-	RCVMORE = UInt64SocketOption(C.ZMQ_RCVMORE)
+	HWM               = UInt64SocketOption(C.ZMQ_HWM)
+	SWAP              = Int64SocketOption(C.ZMQ_SWAP)
+	AFFINITY          = UInt64SocketOption(C.ZMQ_AFFINITY)
+	IDENTITY          = StringSocketOption(C.ZMQ_IDENTITY)
+	SUBSCRIBE         = StringSocketOption(C.ZMQ_SUBSCRIBE)
+	UNSUBSCRIBE       = StringSocketOption(C.ZMQ_UNSUBSCRIBE)
+	RATE              = Int64SocketOption(C.ZMQ_RATE)
+	RECOVERY_IVL      = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
+	MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)
+	SNDBUF            = UInt64SocketOption(C.ZMQ_SNDBUF)
+	RCVBUF            = UInt64SocketOption(C.ZMQ_RCVBUF)
+	RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
+	FD                = UInt64SocketOption(C.ZMQ_FD)
+	EVENTS            = UInt64SocketOption(C.ZMQ_EVENTS)
+	TYPE              = UInt64SocketOption(C.ZMQ_TYPE)
+	LINGER            = UInt64SocketOption(C.ZMQ_LINGER)
+	RECONNECT_IVL     = UInt64SocketOption(C.ZMQ_RECONNECT_IVL)
+	BACKLOG           = UInt64SocketOption(C.ZMQ_BACKLOG)
+	RECOVERY_IVL_MSEC = UInt64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
+	RECONNECT_IVL_MAX = UInt64SocketOption(C.ZMQ_RECONNECT_IVL_MAX)
 
 	// Send/recv options
 	NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
