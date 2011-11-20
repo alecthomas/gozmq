@@ -35,8 +35,8 @@ import "C"
 
 import (
 	"errors"
-	"os"
 	"unsafe"
+	"syscall"
 )
 
 type Context interface {
@@ -70,7 +70,7 @@ type Int64SocketOption int
 type UInt64SocketOption int
 type StringSocketOption int
 type SendRecvOption int
-type zmqErrno os.Errno
+type zmqErrno syscall.Errno
 
 const (
 	// NewSocket types
@@ -160,7 +160,7 @@ func errno() error {
 	if errno >= C.ZMQ_HAUSNUMERO {
 		return zmqErrno(errno)
 	}
-	return os.Errno(errno)
+	return syscall.Errno(errno)
 }
 
 func getErrorForTesting() error {
