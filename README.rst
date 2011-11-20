@@ -78,38 +78,6 @@ A simple client for the above server::
 Caveats
 =======
 
-Thread safety in 0MQ versions < 2.1.0
--------------------------------------
-
-*If you are using 0MQ 2.1.0 or newer, gozmq should "just work". You can ignore
-this section.*
-
-The `0mq API <http://api.zeromq.org>`_ prior to 2.1.0 warns:
-
-  Each ØMQ socket belonging to a particular context may only be used by **the
-  thread that created it** using ``zmq_socket()``.
-
-This is a bit of an onerous restriction.
-
-The only way to guarantee this in Go, as far as I can tell, is to start a
-goroutine, call ``runtime.LockOSThread()``, create a socket then call all socket
-methods in this single goroutine. For the gozmq API to abstract this would
-require proxying all method calls into this goroutine via channels, vastly
-complicating the implementation.
-
-For now I would suggest creation and all subsequent access to each socket be
-performed inside a single goroutine pinned with ``runtime.LockOSThread()``::
-
-  context := zmq.NewContext()
-  go func () {
-    runtime.LockOSThread()
-    defer runtime.UnlockOSThread()
-
-    socket := context.NewSocket(zmq.REQ)
-    defer socket.Close()
-    ... do stuff with socket
-  }()
-
 Memory management
 -----------------
 It's not entirely clear from the 0mq documentation how memory for ``zmq_msg_t``

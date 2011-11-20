@@ -105,24 +105,26 @@ const (
 	SNDBUF            = UInt64SocketOption(C.ZMQ_SNDBUF)
 	RCVBUF            = UInt64SocketOption(C.ZMQ_RCVBUF)
 	RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
-	FD                = UInt64SocketOption(C.ZMQ_FD)
+	FD                = Int64SocketOption(C.ZMQ_FD)
 	EVENTS            = UInt64SocketOption(C.ZMQ_EVENTS)
 	TYPE              = UInt64SocketOption(C.ZMQ_TYPE)
-	LINGER            = UInt64SocketOption(C.ZMQ_LINGER)
-	RECONNECT_IVL     = UInt64SocketOption(C.ZMQ_RECONNECT_IVL)
-	BACKLOG           = UInt64SocketOption(C.ZMQ_BACKLOG)
-	RECOVERY_IVL_MSEC = UInt64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
-	RECONNECT_IVL_MAX = UInt64SocketOption(C.ZMQ_RECONNECT_IVL_MAX)
+	LINGER            = Int64SocketOption(C.ZMQ_LINGER)
+	RECONNECT_IVL     = Int64SocketOption(C.ZMQ_RECONNECT_IVL)
+	BACKLOG           = Int64SocketOption(C.ZMQ_BACKLOG)
+	RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
+	RECONNECT_IVL_MAX = Int64SocketOption(C.ZMQ_RECONNECT_IVL_MAX)
 
 	// Send/recv options
 	NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
 	SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
+)
 
+var (
 	// Additional ZMQ errors
-	EFSM           = zmqErrno(C.EFSM)
-	ENOCOMPATPROTO = zmqErrno(C.ENOCOMPATPROTO)
-	ETERM          = zmqErrno(C.ETERM)
-	EMTHREAD       = zmqErrno(C.EMTHREAD)
+	EFSM           error = zmqErrno(C.EFSM)
+	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
+	ETERM          error = zmqErrno(C.ETERM)
+	EMTHREAD       error = zmqErrno(C.EMTHREAD)
 )
 
 type PollEvents C.short
@@ -148,17 +150,21 @@ func Version() (int, int, int) {
 	return int(major), int(minor), int(patch)
 }
 
-func (e zmqErrno) String() string {
-	return C.GoString(C.zmq_strerror(C.int(e)))
-}
-
 func (e zmqErrno) Error() string {
 	return C.GoString(C.zmq_strerror(C.int(e)))
 }
 
 // int zmq_errno ();
 func errno() error {
-	return zmqErrno(C.zmq_errno())
+	errno := C.zmq_errno()
+	if errno >= C.ZMQ_HAUSNUMERO {
+		return zmqErrno(errno)
+	}
+	return os.Errno(errno)
+}
+
+func getErrorForTesting() error {
+	return zmqErrno(C.EFSM)
 }
 
 /*

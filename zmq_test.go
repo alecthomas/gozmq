@@ -217,6 +217,13 @@ func TestZmqErrorStr(t *testing.T) {
 	}
 }
 
+func TestZmqErrorComparison(t *testing.T) {
+	var e error = getErrorForTesting()
+	if e != EFSM {
+		t.Errorf("EFSM did not compare correctly. This should not happen.")
+	}
+}
+
 // expensive test - send a huge amount of data. should be enough to
 // trash a current machine if Send or Recv are leaking.
 /*
