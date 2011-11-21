@@ -35,8 +35,8 @@ import "C"
 
 import (
 	"errors"
-	"unsafe"
 	"syscall"
+	"unsafe"
 )
 
 type Context interface {
@@ -53,9 +53,11 @@ type Socket interface {
 	SendMultipart(parts [][]byte, flags SendRecvOption) (err error)
 	Close() error
 
+	SetSockOptInt(option IntSocketOption, value int) error
 	SetSockOptInt64(option Int64SocketOption, value int64) error
 	SetSockOptUInt64(option UInt64SocketOption, value uint64) error
 	SetSockOptString(option StringSocketOption, value string) error
+	GetSockOptInt(option IntSocketOption) (value int, err error)
 	GetSockOptInt64(option Int64SocketOption) (value int64, err error)
 	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error)
 	GetSockOptString(option StringSocketOption) (value string, err error)
@@ -66,11 +68,13 @@ type Socket interface {
 }
 
 type SocketType int
+
+type IntSocketOption int
 type Int64SocketOption int
 type UInt64SocketOption int
 type StringSocketOption int
+
 type SendRecvOption int
-type zmqErrno syscall.Errno
 
 const (
 	// NewSocket types
@@ -101,6 +105,7 @@ const (
 	UNSUBSCRIBE       = StringSocketOption(C.ZMQ_UNSUBSCRIBE)
 	RATE              = Int64SocketOption(C.ZMQ_RATE)
 	RECOVERY_IVL      = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
+	RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
 	MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)
 	SNDBUF            = UInt64SocketOption(C.ZMQ_SNDBUF)
 	RCVBUF            = UInt64SocketOption(C.ZMQ_RCVBUF)
@@ -108,16 +113,17 @@ const (
 	FD                = Int64SocketOption(C.ZMQ_FD)
 	EVENTS            = UInt64SocketOption(C.ZMQ_EVENTS)
 	TYPE              = UInt64SocketOption(C.ZMQ_TYPE)
-	LINGER            = Int64SocketOption(C.ZMQ_LINGER)
-	RECONNECT_IVL     = Int64SocketOption(C.ZMQ_RECONNECT_IVL)
-	BACKLOG           = Int64SocketOption(C.ZMQ_BACKLOG)
-	RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
-	RECONNECT_IVL_MAX = Int64SocketOption(C.ZMQ_RECONNECT_IVL_MAX)
+	LINGER            = IntSocketOption(C.ZMQ_LINGER)
+	RECONNECT_IVL     = IntSocketOption(C.ZMQ_RECONNECT_IVL)
+	RECONNECT_IVL_MAX = IntSocketOption(C.ZMQ_RECONNECT_IVL_MAX)
+	BACKLOG           = IntSocketOption(C.ZMQ_BACKLOG)
 
 	// Send/recv options
 	NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
 	SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
 )
+
+type zmqErrno syscall.Errno
 
 var (
 	// Additional ZMQ errors
@@ -229,6 +235,15 @@ func (s *zmqSocket) destroy() {
 	}
 }
 
+// Set an int option on the socket.
+// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
+func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
+	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
+		return errno()
+	}
+	return nil
+}
+
 // Set an int64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
 func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error {
@@ -256,6 +271,17 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) er
 		return errno()
 	}
 	return nil
+}
+
+// Get an int option from the socket.
+// int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
+func (s *zmqSocket) GetSockOptInt(option IntSocketOption) (value int, err error) {
+	size := C.size_t(unsafe.Sizeof(value))
+	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
+		err = errno()
+		return
+	}
+	return
 }
 
 // Get an int64 option from the socket.
