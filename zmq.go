@@ -51,8 +51,16 @@ type Socket interface {
 	Recv(flags SendRecvOption) (data []byte, err error)
 	RecvMultipart(flags SendRecvOption) (parts [][]byte, err error)
 	SendMultipart(parts [][]byte, flags SendRecvOption) (err error)
+	// Returns a value with methods for setting/getting socket options
+	Options() Options
 	Close() error
 
+	// Package local function makes this interface unimplementable outside
+	// of this package which removes some of the point of using an interface
+	apiSocket() unsafe.Pointer
+}
+
+type Options interface {
 	SetSockOptInt(option IntSocketOption, value int) error
 	SetSockOptInt64(option Int64SocketOption, value int64) error
 	SetSockOptUInt64(option UInt64SocketOption, value uint64) error
@@ -62,9 +70,43 @@ type Socket interface {
 	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error)
 	GetSockOptString(option StringSocketOption) (value string, err error)
 
-	// Package local function makes this interface unimplementable outside
-	// of this package which removes some of the point of using an interface
-	apiSocket() unsafe.Pointer
+	// Set options
+	SetAffinity(value uint64) error
+	SetBacklog(value int) error
+	SetHWM(value uint64) error
+	SetIdentity(value string) error
+	SetLinger(value int) error
+	SetMcastLoop(value int64) error
+	SetRate(value int64) error
+	SetRcvBuf(value uint64) error
+	SetReconnectIvl(value int) error
+	SetReconnectIvlMax(value int) error
+	SetRecoveryIvl(value int64) error
+	SetRecoveryIvlMsec(value int64) error
+	SetSndBuf(value uint64) error
+	SetSubscribe(value string) error
+	SetSwap(value int64) error
+	SetUnsubscribe(value string) error
+
+	// Get options
+	Affinity() (uint64, error)
+	Backlog() (int, error)
+	Fd() (int64, error)
+	HWM() (uint64, error)
+	Identity() (string, error)
+	Linger() (int, error)
+	McastLoop() (int64, error)
+	Rate() (int64, error)
+	RcvBuf() (uint64, error)
+	RcvMore() (rval uint64, e error)
+	ReconnectIvl() (int, error)
+	ReconnectIvlMax() (int, error)
+	RecoveryIvl() (int64, error)
+	RecoveryIvlMsec() (int64, error)
+	SndBuf() (uint64, error)
+	SocketType() (uint64, error)
+	Swap() (int64, error)
+
 }
 
 type SocketType int
@@ -237,8 +279,8 @@ func (s *zmqSocket) destroy() {
 
 // Set an int option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
-func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
-	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
+func (s *zmqOptions) SetSockOptInt(option IntSocketOption, value int) error {
+	if C.zmq_setsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
 		return errno()
 	}
 	return nil
@@ -246,8 +288,8 @@ func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
 
 // Set an int64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
-func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error {
-	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
+func (s *zmqOptions) SetSockOptInt64(option Int64SocketOption, value int64) error {
+	if C.zmq_setsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
 		return errno()
 	}
 	return nil
@@ -255,8 +297,8 @@ func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error
 
 // Set a uint64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
-func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) error {
-	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
+func (s *zmqOptions) SetSockOptUInt64(option UInt64SocketOption, value uint64) error {
+	if C.zmq_setsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
 		return errno()
 	}
 	return nil
@@ -264,10 +306,10 @@ func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) er
 
 // Set a string option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
-func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) error {
+func (s *zmqOptions) SetSockOptString(option StringSocketOption, value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
-	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(v), C.size_t(len(value))) != 0 {
+	if C.zmq_setsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(v), C.size_t(len(value))) != 0 {
 		return errno()
 	}
 	return nil
@@ -275,9 +317,9 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) er
 
 // Get an int option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptInt(option IntSocketOption) (value int, err error) {
+func (s *zmqOptions) GetSockOptInt(option IntSocketOption) (value int, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
+	if C.zmq_getsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), &size) != 0 {
 		err = errno()
 		return
 	}
@@ -286,9 +328,9 @@ func (s *zmqSocket) GetSockOptInt(option IntSocketOption) (value int, err error)
 
 // Get an int64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, err error) {
+func (s *zmqOptions) GetSockOptInt64(option Int64SocketOption) (value int64, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
+	if C.zmq_getsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), &size) != 0 {
 		err = errno()
 		return
 	}
@@ -297,9 +339,9 @@ func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, err 
 
 // Get a uint64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error) {
+func (s *zmqOptions) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
+	if C.zmq_getsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), &size) != 0 {
 		err = errno()
 		return
 	}
@@ -308,15 +350,155 @@ func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, e
 
 // Get a string option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, err error) {
+func (s *zmqOptions) GetSockOptString(option StringSocketOption) (value string, err error) {
 	var buffer [1024]byte
 	var size C.size_t = 1024
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&buffer), &size) != 0 {
+	if C.zmq_getsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&buffer), &size) != 0 {
 		err = errno()
 		return
 	}
 	value = string(buffer[:size])
 	return
+}
+
+/* sockopt setters */
+
+type zmqOptions struct {
+	socket Socket
+}
+
+func (s *zmqOptions) SetHWM(value uint64) error {
+	return s.SetSockOptUInt64(HWM, value)
+}
+
+func (s *zmqOptions) SetSwap(value int64) error {
+	return s.SetSockOptInt64(SWAP, value)
+}
+
+func (s *zmqOptions) SetAffinity(value uint64) error {
+	return s.SetSockOptUInt64(AFFINITY, value)
+}
+
+func (s *zmqOptions) SetIdentity(value string) error {
+	return s.SetSockOptString(IDENTITY, value)
+}
+
+func (s *zmqOptions) SetSubscribe(value string) error {
+	return s.SetSockOptString(SUBSCRIBE, value)
+}
+
+func (s *zmqOptions) SetUnsubscribe(value string) error {
+	return s.SetSockOptString(UNSUBSCRIBE, value)
+}
+
+func (s *zmqOptions) SetRate(value int64) error {
+	return s.SetSockOptInt64(RATE, value)
+}
+
+func (s *zmqOptions) SetRecoveryIvl(value int64) error {
+	return s.SetSockOptInt64(RECOVERY_IVL, value)
+}
+
+func (s *zmqOptions) SetRecoveryIvlMsec(value int64) error {
+	return s.SetSockOptInt64(RECOVERY_IVL_MSEC, value)
+}
+
+func (s *zmqOptions) SetMcastLoop(value int64) error {
+	return s.SetSockOptInt64(MCAST_LOOP, value)
+}
+
+func (s *zmqOptions) SetSndBuf(value uint64) error {
+	return s.SetSockOptUInt64(SNDBUF, value)
+}
+
+func (s *zmqOptions) SetRcvBuf(value uint64) error {
+	return s.SetSockOptUInt64(RCVBUF, value)
+}
+
+func (s *zmqOptions) SetLinger(value int) error {
+	return s.SetSockOptInt(LINGER, value)
+}
+
+func (s *zmqOptions) SetReconnectIvl(value int) error {
+	return s.SetSockOptInt(RECONNECT_IVL, value)
+}
+
+func (s *zmqOptions) SetReconnectIvlMax(value int) error {
+	return s.SetSockOptInt(RECONNECT_IVL_MAX, value)
+}
+
+func (s *zmqOptions) SetBacklog(value int) error {
+	return s.SetSockOptInt(BACKLOG, value)
+}
+
+/* sockopt getters */
+
+func (s *zmqOptions) SocketType() (uint64, error) {
+	return s.GetSockOptUInt64(TYPE)
+}
+
+func (s *zmqOptions) RcvMore() (rval uint64, e error) {
+	return s.GetSockOptUInt64(RCVMORE)
+}
+
+func (s *zmqOptions) HWM() (uint64, error) {
+	return s.GetSockOptUInt64(HWM)
+}
+
+func (s *zmqOptions) Swap() (int64, error) {
+	return s.GetSockOptInt64(SWAP)
+}
+
+func (s *zmqOptions) Affinity() (uint64, error) {
+	return s.GetSockOptUInt64(AFFINITY)
+}
+
+func (s *zmqOptions) Identity() (string, error) {
+	return s.GetSockOptString(IDENTITY)
+}
+
+func (s *zmqOptions) Rate() (int64, error) {
+	return s.GetSockOptInt64(RATE)
+}
+
+func (s *zmqOptions) RecoveryIvl() (int64, error) {
+	return s.GetSockOptInt64(RECOVERY_IVL)
+}
+
+func (s *zmqOptions) RecoveryIvlMsec() (int64, error) {
+	return s.GetSockOptInt64(RECOVERY_IVL_MSEC)
+}
+
+func (s *zmqOptions) McastLoop() (int64, error) {
+	return s.GetSockOptInt64(MCAST_LOOP)
+}
+
+func (s *zmqOptions) SndBuf() (uint64, error) {
+	return s.GetSockOptUInt64(SNDBUF)
+}
+
+func (s *zmqOptions) RcvBuf() (uint64, error) {
+	return s.GetSockOptUInt64(RCVBUF)
+}
+
+func (s *zmqOptions) Linger() (int, error) {
+	return s.GetSockOptInt(LINGER)
+}
+
+func (s *zmqOptions) ReconnectIvl() (int, error) {
+	return s.GetSockOptInt(RECONNECT_IVL)
+}
+
+func (s *zmqOptions) ReconnectIvlMax() (int, error) {
+	return s.GetSockOptInt(RECONNECT_IVL_MAX)
+}
+
+func (s *zmqOptions) Backlog() (int, error) {
+	return s.GetSockOptInt(BACKLOG)
+}
+
+func (s *zmqOptions) Fd() (int64, error) {
+	return s.GetSockOptInt64(FD)
 }
 
 // Bind the socket to a listening address.
@@ -415,7 +597,7 @@ func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err err
 			return
 		}
 		parts = append(parts, data)
-		more, err = s.GetSockOptUInt64(RCVMORE)
+		more, err = s.Options().RcvMore()
 		if err != nil {
 			return
 		}
@@ -426,9 +608,12 @@ func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err err
 	return
 }
 
-// return the 
 func (s *zmqSocket) apiSocket() unsafe.Pointer {
 	return s.s
+}
+
+func (s *zmqSocket) Options() Options {
+	return &zmqOptions{s}
 }
 
 // Item to poll for read/write events on, either a Socket or a file descriptor

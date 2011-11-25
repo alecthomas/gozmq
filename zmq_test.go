@@ -135,7 +135,7 @@ func TestSetSockOptString(t *testing.T) {
 	if rc := s.Bind(ADDRESS1); rc != nil {
 		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.Error())
 	}
-	if rc := s.SetSockOptString(SUBSCRIBE, "TEST"); rc != nil {
+	if rc := s.Options().SetSubscribe("TEST"); rc != nil {
 		t.Errorf("Failed to subscribe; %v", rc)
 	}
 }
@@ -221,6 +221,15 @@ func TestZmqErrorComparison(t *testing.T) {
 	var e error = getErrorForTesting()
 	if e != EFSM {
 		t.Errorf("EFSM did not compare correctly. This should not happen.")
+	}
+}
+
+func TestGetter(t *testing.T) {
+	c, _ := NewContext()
+	s, _ := c.NewSocket(PUB)
+	options := s.Options()
+	if v, e := options.Linger(); e != nil || v != -1 {
+		t.Errorf("LINGER is not at expected default of -1")
 	}
 }
 
