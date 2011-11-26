@@ -52,7 +52,7 @@ type Socket interface {
 	RecvMultipart(flags SendRecvOption) (parts [][]byte, err error)
 	SendMultipart(parts [][]byte, flags SendRecvOption) (err error)
 	// Returns a value with methods for setting/getting socket options
-	Options() Options
+	Options() SocketOptions
 	Close() error
 
 	// Package local function makes this interface unimplementable outside
@@ -60,7 +60,7 @@ type Socket interface {
 	apiSocket() unsafe.Pointer
 }
 
-type Options interface {
+type SocketOptions interface {
 	SetSockOptInt(option IntSocketOption, value int) error
 	SetSockOptInt64(option Int64SocketOption, value int64) error
 	SetSockOptUInt64(option UInt64SocketOption, value uint64) error
@@ -280,7 +280,7 @@ func (s *zmqSocket) destroy() {
 // Set an int option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
 func (s *zmqOptions) SetSockOptInt(option IntSocketOption, value int) error {
-	if C.zmq_setsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
+	if C.zmq_setsockopt(s.socket, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
 		return errno()
 	}
 	return nil
@@ -289,7 +289,7 @@ func (s *zmqOptions) SetSockOptInt(option IntSocketOption, value int) error {
 // Set an int64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
 func (s *zmqOptions) SetSockOptInt64(option Int64SocketOption, value int64) error {
-	if C.zmq_setsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
+	if C.zmq_setsockopt(s.socket, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
 		return errno()
 	}
 	return nil
@@ -298,7 +298,7 @@ func (s *zmqOptions) SetSockOptInt64(option Int64SocketOption, value int64) erro
 // Set a uint64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
 func (s *zmqOptions) SetSockOptUInt64(option UInt64SocketOption, value uint64) error {
-	if C.zmq_setsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
+	if C.zmq_setsockopt(s.socket, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(&value))) != 0 {
 		return errno()
 	}
 	return nil
@@ -309,7 +309,7 @@ func (s *zmqOptions) SetSockOptUInt64(option UInt64SocketOption, value uint64) e
 func (s *zmqOptions) SetSockOptString(option StringSocketOption, value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
-	if C.zmq_setsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(v), C.size_t(len(value))) != 0 {
+	if C.zmq_setsockopt(s.socket, C.int(option), unsafe.Pointer(v), C.size_t(len(value))) != 0 {
 		return errno()
 	}
 	return nil
@@ -319,7 +319,7 @@ func (s *zmqOptions) SetSockOptString(option StringSocketOption, value string) e
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
 func (s *zmqOptions) GetSockOptInt(option IntSocketOption) (value int, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), &size) != 0 {
+	if C.zmq_getsockopt(s.socket, C.int(option), unsafe.Pointer(&value), &size) != 0 {
 		err = errno()
 		return
 	}
@@ -330,7 +330,7 @@ func (s *zmqOptions) GetSockOptInt(option IntSocketOption) (value int, err error
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
 func (s *zmqOptions) GetSockOptInt64(option Int64SocketOption) (value int64, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), &size) != 0 {
+	if C.zmq_getsockopt(s.socket, C.int(option), unsafe.Pointer(&value), &size) != 0 {
 		err = errno()
 		return
 	}
@@ -341,7 +341,7 @@ func (s *zmqOptions) GetSockOptInt64(option Int64SocketOption) (value int64, err
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
 func (s *zmqOptions) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&value), &size) != 0 {
+	if C.zmq_getsockopt(s.socket, C.int(option), unsafe.Pointer(&value), &size) != 0 {
 		err = errno()
 		return
 	}
@@ -353,7 +353,7 @@ func (s *zmqOptions) GetSockOptUInt64(option UInt64SocketOption) (value uint64, 
 func (s *zmqOptions) GetSockOptString(option StringSocketOption) (value string, err error) {
 	var buffer [1024]byte
 	var size C.size_t = 1024
-	if C.zmq_getsockopt(s.socket.apiSocket(), C.int(option), unsafe.Pointer(&buffer), &size) != 0 {
+	if C.zmq_getsockopt(s.socket, C.int(option), unsafe.Pointer(&buffer), &size) != 0 {
 		err = errno()
 		return
 	}
@@ -364,7 +364,7 @@ func (s *zmqOptions) GetSockOptString(option StringSocketOption) (value string, 
 /* sockopt setters */
 
 type zmqOptions struct {
-	socket Socket
+	socket unsafe.Pointer
 }
 
 func (s *zmqOptions) SetHWM(value uint64) error {
@@ -612,8 +612,8 @@ func (s *zmqSocket) apiSocket() unsafe.Pointer {
 	return s.s
 }
 
-func (s *zmqSocket) Options() Options {
-	return &zmqOptions{s}
+func (s *zmqSocket) Options() SocketOptions {
+	return &zmqOptions{s.s}
 }
 
 // Item to poll for read/write events on, either a Socket or a file descriptor
