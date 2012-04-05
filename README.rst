@@ -10,7 +10,7 @@ Installing
 ==========
 Install gozmq with::
 
-  goinstall github.com/alecthomas/gozmq
+  go get github.com/alecthomas/gozmq
 
 If that doesn't work you might need to checkout the source and play with the
 CGO_LDFLAGS and CGO_CFLAGS in the Makefile::
