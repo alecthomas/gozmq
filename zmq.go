@@ -1,5 +1,5 @@
 /*
-  Copyright 2010 Alec Thomas
+  Copyright 2010-2012 Alec Thomas
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -433,10 +433,10 @@ func (s *zmqSocket) apiSocket() unsafe.Pointer {
 
 // Item to poll for read/write events on, either a Socket or a file descriptor
 type PollItem struct {
-	Socket  Socket     // socket to poll for events on 
-	Fd      int        // fd to poll for events on as returned from os.File.Fd() 
-	Events  PollEvents // event set to poll for
-	REvents PollEvents // events that were present
+	Socket  Socket          // socket to poll for events on 
+	Fd      ZmqOsSocketType // fd to poll for events on as returned from os.File.Fd() 
+	Events  PollEvents      // event set to poll for
+	REvents PollEvents      // events that were present
 }
 
 // a set of items to poll for events on
@@ -448,7 +448,7 @@ func Poll(items []PollItem, timeout int64) (count int, err error) {
 	zitems := make([]C.zmq_pollitem_t, len(items))
 	for i, pi := range items {
 		zitems[i].socket = pi.Socket.apiSocket()
-		zitems[i].fd = C.int(pi.Fd)
+		zitems[i].fd = pi.Fd.ToRaw()
 		zitems[i].events = C.short(pi.Events)
 	}
 	rc := int(C.zmq_poll(&zitems[0], C.int(len(zitems)), C.long(timeout)))
