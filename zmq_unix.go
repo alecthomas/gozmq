@@ -14,8 +14,7 @@
   limitations under the License.
 */
 
-// For some reason, Go on Windows tries to build both this file and zmq_windows.go.
-// +build !windows
+// +build darwin freebsd linux netbsd openbsd
 
 package gozmq
 
