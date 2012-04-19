@@ -1,3 +1,5 @@
+// +build darwin freebsd linux netbsd openbsd
+
 /*
   Copyright 2012 Alec Thomas
 
@@ -13,8 +15,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
-// +build darwin freebsd linux netbsd openbsd
 
 package gozmq
 
