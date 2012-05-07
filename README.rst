@@ -1,10 +1,11 @@
-Go Bindings for 0mq (zeromq)
-############################
-This package implements `Go <http://golang.org>`_ bindings for the `0mq
+Go (golang) Bindings for 0mq (zmq, zeromq)
+##########################################
+This package implements `Go <http://golang.org>`_ (golang) bindings for the `0mq
 <http://zeromq.org>`_ C API.
 
-Note that this is *not* the same as `this implementation
-<http://github.com/boggle/gozero>`_.
+Note that this is *not* the same as
+`this implementation <http://github.com/boggle/gozero>`_ or
+`this implementation <http://code.google.com/p/gozmq/>`_.
 
 Installing
 ==========
