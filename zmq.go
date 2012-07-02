@@ -76,7 +76,7 @@ type StringSocketOption int
 
 type SendRecvOption int
 
-const (
+var (
 	// NewSocket types
 	PAIR   = SocketType(C.ZMQ_PAIR)
 	PUB    = SocketType(C.ZMQ_PUB)
@@ -117,6 +117,8 @@ const (
 	RECONNECT_IVL     = IntSocketOption(C.ZMQ_RECONNECT_IVL)
 	RECONNECT_IVL_MAX = IntSocketOption(C.ZMQ_RECONNECT_IVL_MAX)
 	BACKLOG           = IntSocketOption(C.ZMQ_BACKLOG)
+	RCVTIMEO          = IntSocketOption(C.ZMQ_RCVTIMEO)
+	SNDTIMEO          = IntSocketOption(C.ZMQ_SNDTIMEO)
 
 	// Send/recv options
 	NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
@@ -135,7 +137,7 @@ var (
 
 type PollEvents C.short
 
-const (
+var (
 	POLLIN  = PollEvents(C.ZMQ_POLLIN)
 	POLLOUT = PollEvents(C.ZMQ_POLLOUT)
 	POLLERR = PollEvents(C.ZMQ_POLLERR)
@@ -143,7 +145,7 @@ const (
 
 type DeviceType int
 
-const (
+var (
 	STREAMER  = DeviceType(C.ZMQ_STREAMER)
 	FORWARDER = DeviceType(C.ZMQ_FORWARDER)
 	QUEUE     = DeviceType(C.ZMQ_QUEUE)
