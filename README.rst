@@ -13,6 +13,10 @@ Install gozmq with::
 
   go get github.com/alecthomas/gozmq
 
+If you're using ZeroMQ 2.1.x, install with::
+
+  go get -tags 'zmq_2_1' github.com/alecthomas/gozmq
+
 If that doesn't work you might need to checkout the source and play with the
 CGO_LDFLAGS and CGO_CFLAGS in the Makefile::
 
