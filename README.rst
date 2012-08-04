@@ -13,6 +13,8 @@ Install gozmq with::
 
   go get github.com/alecthomas/gozmq
 
+This implementation works currently against:: ZeroMQ 2.2.x
+
 If you're using ZeroMQ 2.1.x, install with::
 
   go get -tags 'zmq_2_1' github.com/alecthomas/gozmq
