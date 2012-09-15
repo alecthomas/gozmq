@@ -61,6 +61,7 @@ type Socket interface {
 	GetSockOptInt64(option Int64SocketOption) (value int64, err error)
 	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error)
 	GetSockOptString(option StringSocketOption) (value string, err error)
+	GetSockOptBool(option BoolSocketOption) (value bool, err error)
 
 	// Package local function makes this interface unimplementable outside
 	// of this package which removes some of the point of using an interface
@@ -73,7 +74,9 @@ type IntSocketOption int
 type Int64SocketOption int
 type UInt64SocketOption int
 type StringSocketOption int
+type BoolSocketOption int
 
+type MessageOption int
 type SendRecvOption int
 
 var (
@@ -97,16 +100,12 @@ var (
 	DOWNSTREAM = PUSH
 
 	// NewSocket options
-	HWM               = UInt64SocketOption(C.ZMQ_HWM)
-	SWAP              = Int64SocketOption(C.ZMQ_SWAP)
 	AFFINITY          = UInt64SocketOption(C.ZMQ_AFFINITY)
 	IDENTITY          = StringSocketOption(C.ZMQ_IDENTITY)
 	SUBSCRIBE         = StringSocketOption(C.ZMQ_SUBSCRIBE)
 	UNSUBSCRIBE       = StringSocketOption(C.ZMQ_UNSUBSCRIBE)
 	RATE              = Int64SocketOption(C.ZMQ_RATE)
 	RECOVERY_IVL      = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
-	RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
-	MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)
 	SNDBUF            = UInt64SocketOption(C.ZMQ_SNDBUF)
 	RCVBUF            = UInt64SocketOption(C.ZMQ_RCVBUF)
 	RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
@@ -119,7 +118,6 @@ var (
 	BACKLOG           = IntSocketOption(C.ZMQ_BACKLOG)
 
 	// Send/recv options
-	NOBLOCK = SendRecvOption(C.ZMQ_NOBLOCK)
 	SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
 )
 
@@ -319,6 +317,15 @@ func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, e
 	return
 }
 
+func (s *zmqSocket) GetSockOptBool(option BoolSocketOption) (value bool, err error) {
+	size := C.size_t(unsafe.Sizeof(value))
+	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
+		err = errno()
+		return
+	}
+	return
+}
+
 // Bind the socket to a listening address.
 // int zmq_bind (void *s, const char *addr);
 func (s *zmqSocket) Bind(address string) error {
@@ -339,57 +346,6 @@ func (s *zmqSocket) Connect(address string) error {
 		return errno()
 	}
 	return nil
-}
-
-// Send a message to the socket.
-// int zmq_send (void *s, zmq_msg_t *msg, int flags);
-func (s *zmqSocket) Send(data []byte, flags SendRecvOption) error {
-	var m C.zmq_msg_t
-	// Copy data array into C-allocated buffer.
-	size := C.size_t(len(data))
-
-	if C.zmq_msg_init_size(&m, size) != 0 {
-		return errno()
-	}
-
-	if size > 0 {
-		// FIXME Ideally this wouldn't require a copy.
-		C.memcpy(unsafe.Pointer(C.zmq_msg_data(&m)), unsafe.Pointer(&data[0]), size) // XXX I hope this works...(seems to)
-	}
-
-	if C.zmq_send(s.s, &m, C.int(flags)) != 0 {
-		// zmq_send did not take ownership, free message
-		C.zmq_msg_close(&m)
-		return errno()
-	}
-	return nil
-}
-
-// Receive a message from the socket.
-// int zmq_recv (void *s, zmq_msg_t *msg, int flags);
-func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err error) {
-	// Allocate and initialise a new zmq_msg_t
-	var m C.zmq_msg_t
-	if C.zmq_msg_init(&m) != 0 {
-		err = errno()
-		return
-	}
-	defer C.zmq_msg_close(&m)
-	// Receive into message
-	if C.zmq_recv(s.s, &m, C.int(flags)) != 0 {
-		err = errno()
-		return
-	}
-	// Copy message data into a byte array
-	// FIXME Ideally this wouldn't require a copy.
-	size := C.zmq_msg_size(&m)
-	if size > 0 {
-		data = make([]byte, int(size))
-		C.memcpy(unsafe.Pointer(&data[0]), C.zmq_msg_data(&m), size)
-	} else {
-		data = nil
-	}
-	return
 }
 
 // Send a multipart message.
