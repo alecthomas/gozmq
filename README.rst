@@ -39,6 +39,18 @@ CGO_LDFLAGS and CGO_CFLAGS in the Makefile::
   gomake install
   popd
 
+If you get errors like this with 'go get' or 'go build'::
+
+  1: error: 'ZMQ_FOO' undeclared (first use in this function)
+
+You probably need to download and install zmq manually - the packaged version
+of zmq on your Linux distribution (e.g. libzmq-dev on Ubuntu Lucid) isn't
+up-to-date ::
+
+  wget http://download.zeromq.org/zeromq-2.2.0.tar.gz
+  tar zxvf zeromq-2.2.0.tar.gz ; cd zeromq-2.2.0
+  ./configure && make && sudo make install
+
 Differences from the C API
 ==========================
 The API implemented by this package does not attempt to expose ``zmq_msg_t`` at
