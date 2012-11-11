@@ -65,7 +65,7 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) error {
 		C.memcpy(unsafe.Pointer(C.zmq_msg_data(&m)), unsafe.Pointer(&data[0]), size) // XXX I hope this works...(seems to)
 	}
 
-	if C.zmq_sendmsg(s.s, &m, C.int(flags)) != 0 {
+	if C.zmq_sendmsg(s.s, &m, C.int(flags)) == -1 {
 		// zmq_send did not take ownership, free message
 		C.zmq_msg_close(&m)
 		return errno()
