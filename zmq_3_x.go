@@ -26,7 +26,10 @@ package gozmq
 #include <string.h>
 */
 import "C"
-import "unsafe"
+import (
+	"unsafe"
+	"errors"
+)
 
 var (
 	SNDHWM = IntSocketOption(C.ZMQ_SNDHWM)
@@ -98,4 +101,12 @@ func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err error) {
 		data = nil
 	}
 	return
+}
+
+// run a zmq_proxy with in, out and capture sockets
+func Proxy(in, out, capture Socket) error {
+	if C.zmq_proxy(in.apiSocket(), out.apiSocket(), capture.apiSocket()) != 0 {
+		return errno()
+	}
+	return errors.New("zmq_proxy() returned unexpectedly.")
 }
