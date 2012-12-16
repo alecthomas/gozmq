@@ -14,6 +14,8 @@ implementation](http://code.google.com/p/gozmq/).
 
 ## Installing
 
+GoZMQ currently supports ZMQ 2.1.x, 2.2.x and *basic* support for 3.x. Following are instructions on how to compile against these versions.
+
 Install gozmq with:
 
     go get github.com/alecthomas/gozmq
@@ -28,31 +30,31 @@ If you're using ZeroMQ 2.1.x, install with:
 
 ### ZeroMQ 3.x
 
-There is basic support for ZeroMQ 3.x. Install with:
+There is *basic* support for ZeroMQ 3.x. Install with:
 
     go get -tags zmq_3_x github.com/alecthomas/gozmq
 
-### Manually
+### Troubleshooting
 
-If that doesn't work you might need to checkout the source and play with
-the CGO\_LDFLAGS and CGO\_CFLAGS in the Makefile:
+#### Go can't find ZMQ
 
-    git clone git://github.com/alecthomas/gozmq.git
-    cd gozmq
-    gomake install
-    popd
+If the go tool can't find zmq and you know it is installed, you may need to override the C compiler/linker flags.
+
+eg. If you installed zmq into `/opt/zmq` you might try:
+
+	CGO_CFLAGS=-I/opt/zmq/include CGO_LDFLAGS=-L/opt/zmq/lib \
+		go get github.com/alecthomas/gozmq
+
+#### Mismatch in version of ZMQ
 
 If you get errors like this with 'go get' or 'go build':
 
     1: error: 'ZMQ_FOO' undeclared (first use in this function)
+    
+There are two possibilities:
 
-You probably need to download and install zmq manually - the packaged
-version of zmq on your Linux distribution (e.g. libzmq-dev on Ubuntu
-Lucid) isn't up-to-date
-
-    wget http://download.zeromq.org/zeromq-2.2.0.tar.gz
-    tar zxvf zeromq-2.2.0.tar.gz ; cd zeromq-2.2.0
-    ./configure && make && sudo make install
+1. Your version of zmq is *very* old. In this case you will need to download and build zmq yourself.
+2. You are building gozmq against the wrong version of zmq. See the [installation](#installation) instructions for details on how to target the correct version.
 
 ## Differences from the C API
 
