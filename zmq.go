@@ -14,14 +14,139 @@
   limitations under the License.
 */
 
-//
-// This package implements Go bindings for the 0mq C API.
-//
-// It does not attempt to expose zmq_msg_t at all. Instead, Recv() and Send()
-// both operate on byte slices, allocating and freeing the memory
-// automatically. Currently this requires copying to/from C malloced memory,
-// but a future implementation may be able to avoid this to a certain extent.
-//
+/*
+# Go (golang) Bindings for 0mq (zmq, zeromq)
+
+This package implements [Go](http://golang.org) (golang) bindings for
+the [0mq](http://zeromq.org) C API.
+
+It does not attempt to expose `zmq_msg_t` at all. Instead, `Recv()` and `Send()`
+both operate on byte slices, allocating and freeing the memory automatically.
+Currently this requires copying to/from C malloced memory, but a future
+implementation may be able to avoid this to a certain extent.
+
+Note that this is *not* the same as [this
+implementation](http://github.com/boggle/gozero) or [this
+implementation](http://code.google.com/p/gozmq/).
+
+## Installing
+
+Install gozmq with:
+
+    go get github.com/alecthomas/gozmq
+
+This implementation works currently against:: ZeroMQ 2.2.x
+
+### ZeroMQ 2.1.x
+
+If you're using ZeroMQ 2.1.x, install with:
+
+    go get -tags zmq_2_1 github.com/alecthomas/gozmq
+
+### ZeroMQ 3.x
+
+There is basic support for ZeroMQ 3.x. Install with:
+
+    go get -tags zmq_3_x github.com/alecthomas/gozmq
+
+### Manually
+
+If that doesn't work you might need to checkout the source and play with
+the CGO\_LDFLAGS and CGO\_CFLAGS in the Makefile:
+
+    git clone git://github.com/alecthomas/gozmq.git
+    cd gozmq
+    gomake install
+    popd
+
+If you get errors like this with 'go get' or 'go build':
+
+    1: error: 'ZMQ_FOO' undeclared (first use in this function)
+
+You probably need to download and install zmq manually - the packaged
+version of zmq on your Linux distribution (e.g. libzmq-dev on Ubuntu
+Lucid) isn't up-to-date
+
+    wget http://download.zeromq.org/zeromq-2.2.0.tar.gz
+    tar zxvf zeromq-2.2.0.tar.gz ; cd zeromq-2.2.0
+    ./configure && make && sudo make install
+
+## Differences from the C API
+
+The API implemented by this package does not attempt to expose
+`zmq_msg_t` at all. Instead, `Recv()` and `Send()` both operate on byte
+slices, allocating and freeing the memory automatically. Currently this
+requires copying to/from C malloced memory, but a future implementation
+may be able to avoid this to a certain extent.
+
+All major features are supported: contexts, sockets, devices, and polls.
+
+## Example
+
+Here are direct translations of some of the examples from [this blog
+post](http://nichol.as/zeromq-an-introduction).
+
+A simple echo server:
+
+```go
+package main
+
+import zmq "github.com/alecthomas/gozmq"
+
+func main() {
+  context, _ := zmq.NewContext()
+  socket, _ := context.NewSocket(zmq.REP)
+  socket.Bind("tcp://127.0.0.1:5000")
+  socket.Bind("tcp://127.0.0.1:6000")
+
+  for {
+    msg, _ := socket.Recv(0)
+    println("Got", string(msg))
+    socket.Send(msg, 0)
+  }
+}
+```
+
+A simple client for the above server:
+
+```go
+package main
+
+import "fmt"
+import zmq "github.com/alecthomas/gozmq"
+
+func main() {
+  context, _ := zmq.NewContext()
+  socket, _ := context.NewSocket(zmq.REQ)
+  socket.Connect("tcp://127.0.0.1:5000")
+  socket.Connect("tcp://127.0.0.1:6000")
+
+  for i := 0; i < 10; i++ {
+    msg := fmt.Sprintf("msg %d", i)
+    socket.Send([]byte(msg), 0)
+    println("Sending", msg)
+    socket.Recv(0)
+  }
+}
+```
+
+## Caveats
+
+### Memory management
+
+It's not entirely clear from the 0mq documentation how memory for
+`zmq_msg_t` and packet data is managed once 0mq takes ownership. After
+digging into the source a little, this package operates under the
+following (educated) assumptions:
+
+-   References to `zmq_msg_t` structures are not held by the C API
+    beyond the duration of any function call.
+-   Packet data is reference counted internally by the C API. The count
+    is incremented when a packet is queued for delivery to a destination
+    (the inference being that for delivery to N destinations, the
+    reference count will be incremented N times) and decremented once
+    the packet has either been delivered or errored.
+*/
 package gozmq
 
 /*
@@ -234,7 +359,7 @@ func (s *zmqSocket) destroy() {
 }
 
 // Set an int option on the socket.
-// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
+// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
 	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))) != 0 {
 		return errno()
@@ -243,7 +368,7 @@ func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
 }
 
 // Set an int64 option on the socket.
-// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
+// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error {
 	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))) != 0 {
 		return errno()
@@ -252,7 +377,7 @@ func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error
 }
 
 // Set a uint64 option on the socket.
-// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
+// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) error {
 	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))) != 0 {
 		return errno()
@@ -261,7 +386,7 @@ func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) er
 }
 
 // Set a string option on the socket.
-// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen); 
+// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
@@ -382,15 +507,15 @@ func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err err
 	return
 }
 
-// return the 
+// return the
 func (s *zmqSocket) apiSocket() unsafe.Pointer {
 	return s.s
 }
 
 // Item to poll for read/write events on, either a Socket or a file descriptor
 type PollItem struct {
-	Socket  Socket          // socket to poll for events on 
-	Fd      ZmqOsSocketType // fd to poll for events on as returned from os.File.Fd() 
+	Socket  Socket          // socket to poll for events on
+	Fd      ZmqOsSocketType // fd to poll for events on as returned from os.File.Fd()
 	Events  PollEvents      // event set to poll for
 	REvents PollEvents      // events that were present
 }
