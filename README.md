@@ -3,10 +3,9 @@
 This package implements [Go](http://golang.org) (golang) bindings for
 the [0mq](http://zeromq.org) C API.
 
-It does not attempt to expose `zmq_msg_t` at all. Instead, `Recv()` and `Send()`
-both operate on byte slices, allocating and freeing the memory automatically.
-Currently this requires copying to/from C malloced memory, but a future
-implementation may be able to avoid this to a certain extent.
+GoZMQ [does not](#zero-copy) support zero-copy.
+
+A full list of examples is included in the [zguide](https://github.com/imatix/zguide/tree/master/examples/Go).
 
 Note that this is *not* the same as [this
 implementation](http://github.com/boggle/gozero) or [this
@@ -116,6 +115,16 @@ func main() {
 ```
 
 ## Caveats
+
+### Zero-copy
+
+GoZMQ does not support zero-copy.
+
+GoZMQ does not attempt to expose `zmq_msg_t` at all. Instead, `Recv()` and `Send()`
+both operate on byte slices, allocating and freeing the memory automatically.
+Currently this requires copying to/from C malloced memory, but a future
+implementation may be able to avoid this to a certain extent.
+
 
 ### Memory management
 
