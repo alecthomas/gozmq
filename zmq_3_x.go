@@ -27,8 +27,8 @@ package gozmq
 */
 import "C"
 import (
-	"unsafe"
 	"errors"
+	"unsafe"
 )
 
 var (
