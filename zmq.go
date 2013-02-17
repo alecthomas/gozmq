@@ -118,6 +118,7 @@ type zmqErrno syscall.Errno
 
 var (
 	// Additional ZMQ errors
+	ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
 	EFSM           error = zmqErrno(C.EFSM)
 	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
 	ETERM          error = zmqErrno(C.ETERM)
