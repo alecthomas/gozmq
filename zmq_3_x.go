@@ -42,8 +42,7 @@ var (
 	TCP_KEEPALIVE_CNT   = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_CNT)
 	TCP_KEEPALIVE_IDLE  = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_IDLE)
 	TCP_KEEPALIVE_INTVL = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_INTVL)
-	// TODO Make this work.
-	//TCP_ACCEPT_FILTER   = IntSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
+	TCP_ACCEPT_FILTER   = StringSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
 
 	// Message options
 	MORE = MessageOption(C.ZMQ_MORE)
