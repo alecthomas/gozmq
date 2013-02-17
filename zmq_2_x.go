@@ -28,7 +28,7 @@ package gozmq
 import "C"
 import "unsafe"
 
-var (
+const (
 	RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
 	SWAP              = Int64SocketOption(C.ZMQ_SWAP)
 	MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)

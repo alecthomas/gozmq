@@ -72,7 +72,7 @@ type BoolSocketOption int
 type MessageOption int
 type SendRecvOption int
 
-var (
+const (
 	// NewSocket types
 	PAIR   = SocketType(C.ZMQ_PAIR)
 	PUB    = SocketType(C.ZMQ_PUB)
@@ -127,7 +127,7 @@ var (
 
 type PollEvents C.short
 
-var (
+const (
 	POLLIN  = PollEvents(C.ZMQ_POLLIN)
 	POLLOUT = PollEvents(C.ZMQ_POLLOUT)
 	POLLERR = PollEvents(C.ZMQ_POLLERR)
@@ -135,7 +135,7 @@ var (
 
 type DeviceType int
 
-var (
+const (
 	STREAMER  = DeviceType(C.ZMQ_STREAMER)
 	FORWARDER = DeviceType(C.ZMQ_FORWARDER)
 	QUEUE     = DeviceType(C.ZMQ_QUEUE)

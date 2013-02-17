@@ -31,7 +31,7 @@ import (
 	"unsafe"
 )
 
-var (
+const (
 	SNDHWM = IntSocketOption(C.ZMQ_SNDHWM)
 	RCVHWM = IntSocketOption(C.ZMQ_SNDHWM)
 

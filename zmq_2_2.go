@@ -23,7 +23,7 @@ package gozmq
 */
 import "C"
 
-var (
+const (
 	RCVTIMEO = IntSocketOption(C.ZMQ_RCVTIMEO)
 	SNDTIMEO = IntSocketOption(C.ZMQ_SNDTIMEO)
 )
