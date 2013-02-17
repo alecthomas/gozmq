@@ -152,13 +152,13 @@ func (e zmqErrno) Error() string {
 	return C.GoString(C.zmq_strerror(C.int(e)))
 }
 
-// int zmq_errno ();
-func errno() error {
-	errno := C.zmq_errno()
-	if errno >= C.ZMQ_HAUSNUMERO {
+// If possible, convert a syscall.Errno to a zmqErrno.
+func casterr(fromcgo error) error {
+	errno, ok := fromcgo.(syscall.Errno)
+	if ok && errno >= C.ZMQ_HAUSNUMERO {
 		return zmqErrno(errno)
 	}
-	return syscall.Errno(errno)
+	return fromcgo
 }
 
 func getErrorForTesting() error {
@@ -177,11 +177,12 @@ type zmqContext struct {
 // void *zmq_init (int io_threads);
 func NewContext() (Context, error) {
 	// TODO Pass something useful here. Number of cores?
+	c, err := C.zmq_init(1)
 	// C.NULL is correct but causes a runtime failure on darwin at present
-	if c := C.zmq_init(1); c != nil /*C.NULL*/ {
+	if c != nil /*C.NULL*/ {
 		return &zmqContext{c}, nil
 	}
-	return nil, errno()
+	return nil, casterr(err)
 }
 
 // int zmq_term (void *context);
@@ -197,11 +198,12 @@ func (c *zmqContext) Close() {
 // Create a new socket.
 // void *zmq_socket (void *context, int type);
 func (c *zmqContext) NewSocket(t SocketType) (Socket, error) {
+	s, err := C.zmq_socket(c.c, C.int(t))
 	// C.NULL is correct but causes a runtime failure on darwin at present
-	if s := C.zmq_socket(c.c, C.int(t)); s != nil /*C.NULL*/ {
+	if s != nil /*C.NULL*/ {
 		return &zmqSocket{c: c, s: s}, nil
 	}
-	return nil, errno()
+	return nil, casterr(err)
 }
 
 type zmqSocket struct {
@@ -213,8 +215,8 @@ type zmqSocket struct {
 // Shutdown the socket.
 // int zmq_close (void *s);
 func (s *zmqSocket) Close() error {
-	if C.zmq_close(s.s) != 0 {
-		return errno()
+	if rc, err := C.zmq_close(s.s); rc != 0 {
+		return casterr(err)
 	}
 	s.c = nil
 	return nil
@@ -230,8 +232,8 @@ func (s *zmqSocket) destroy() {
 // Set an int option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
-	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))) != 0 {
-		return errno()
+	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); rc != 0 {
+		return casterr(err)
 	}
 	return nil
 }
@@ -239,8 +241,8 @@ func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
 // Set an int64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error {
-	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))) != 0 {
-		return errno()
+	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); rc != 0 {
+		return casterr(err)
 	}
 	return nil
 }
@@ -248,8 +250,8 @@ func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error
 // Set a uint64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) error {
-	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))) != 0 {
-		return errno()
+	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); rc != 0 {
+		return casterr(err)
 	}
 	return nil
 }
@@ -259,8 +261,8 @@ func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) er
 func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
-	if C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(v), C.size_t(len(value))) != 0 {
-		return errno()
+	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(v), C.size_t(len(value))); rc != 0 {
+		return casterr(err)
 	}
 	return nil
 }
@@ -269,8 +271,9 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) er
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
 func (s *zmqSocket) GetSockOptInt(option IntSocketOption) (value int, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
-		err = errno()
+	var rc C.int
+	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size); rc != 0 {
+		err = casterr(err)
 		return
 	}
 	return
@@ -280,8 +283,9 @@ func (s *zmqSocket) GetSockOptInt(option IntSocketOption) (value int, err error)
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
 func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
-		err = errno()
+	var rc C.int
+	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size); rc != 0 {
+		err = casterr(err)
 		return
 	}
 	return
@@ -291,8 +295,10 @@ func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, err 
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
 func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
-		err = errno()
+	var rc C.int
+	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size); rc != 0 {
+		println("GetSockOptUInt64:", err.Error())
+		err = casterr(err)
 		return
 	}
 	return
@@ -303,8 +309,9 @@ func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, e
 func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, err error) {
 	var buffer [1024]byte
 	var size C.size_t = 1024
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&buffer), &size) != 0 {
-		err = errno()
+	var rc C.int
+	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&buffer), &size); rc != 0 {
+		err = casterr(err)
 		return
 	}
 	value = string(buffer[:size])
@@ -313,8 +320,9 @@ func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, e
 
 func (s *zmqSocket) GetSockOptBool(option BoolSocketOption) (value bool, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
-	if C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size) != 0 {
-		err = errno()
+	var rc C.int
+	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size); rc != 0 {
+		err = casterr(err)
 		return
 	}
 	return
@@ -325,8 +333,8 @@ func (s *zmqSocket) GetSockOptBool(option BoolSocketOption) (value bool, err err
 func (s *zmqSocket) Bind(address string) error {
 	a := C.CString(address)
 	defer C.free(unsafe.Pointer(a))
-	if C.zmq_bind(s.s, a) != 0 {
-		return errno()
+	if rc, err := C.zmq_bind(s.s, a); rc != 0 {
+		return casterr(err)
 	}
 	return nil
 }
@@ -336,8 +344,8 @@ func (s *zmqSocket) Bind(address string) error {
 func (s *zmqSocket) Connect(address string) error {
 	a := C.CString(address)
 	defer C.free(unsafe.Pointer(a))
-	if C.zmq_connect(s.s, a) != 0 {
-		return errno()
+	if rc, err := C.zmq_connect(s.s, a); rc != 0 {
+		return casterr(err)
 	}
 	return nil
 }
@@ -401,22 +409,22 @@ func Poll(items []PollItem, timeout int64) (count int, err error) {
 		zitems[i].fd = pi.Fd.ToRaw()
 		zitems[i].events = C.short(pi.Events)
 	}
-	rc := int(C.zmq_poll(&zitems[0], C.int(len(zitems)), C.long(timeout)))
+	rc, err := C.zmq_poll(&zitems[0], C.int(len(zitems)), C.long(timeout))
 	if rc == -1 {
-		return 0, errno()
+		return 0, casterr(err)
 	}
 
 	for i, zi := range zitems {
 		items[i].REvents = PollEvents(zi.revents)
 	}
 
-	return rc, nil
+	return int(rc), nil
 }
 
 // run a zmq_device passing messages between in and out
 func Device(t DeviceType, in, out Socket) error {
-	if C.zmq_device(C.int(t), in.apiSocket(), out.apiSocket()) != 0 {
-		return errno()
+	if rc, err := C.zmq_device(C.int(t), in.apiSocket(), out.apiSocket()); rc != 0 {
+		return casterr(err)
 	}
 	return errors.New("zmq_device() returned unexpectedly.")
 }
