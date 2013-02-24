@@ -28,6 +28,7 @@ import "C"
 import (
 	"errors"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -140,6 +141,18 @@ var (
 	FORWARDER = DeviceType(C.ZMQ_FORWARDER)
 	QUEUE     = DeviceType(C.ZMQ_QUEUE)
 )
+
+var (
+	pollunit time.Duration
+)
+
+func init() {
+	if v, _, _ := Version(); v < 3 {
+		pollunit = time.Microsecond
+	} else {
+		pollunit = time.Millisecond
+	}
+}
 
 // void zmq_version (int *major, int *minor, int *patch);
 func Version() (int, int, int) {
@@ -410,15 +423,16 @@ type PollItem struct {
 type PollItems []PollItem
 
 // Poll ZmqSockets and file descriptors for I/O readiness. Timeout is in
-// microseconds.
-func Poll(items []PollItem, timeout int64) (count int, err error) {
+// time.Duration. The smallest possible timeout is time.Millisecond for
+// ZeroMQ version 3 and above, and time.Microsecond for earlier versions.
+func Poll(items []PollItem, timeout time.Duration) (count int, err error) {
 	zitems := make([]C.zmq_pollitem_t, len(items))
 	for i, pi := range items {
 		zitems[i].socket = pi.Socket.apiSocket()
 		zitems[i].fd = pi.Fd.ToRaw()
 		zitems[i].events = C.short(pi.Events)
 	}
-	rc, err := C.zmq_poll(&zitems[0], C.int(len(zitems)), C.long(timeout))
+	rc, err := C.zmq_poll(&zitems[0], C.int(len(zitems)), C.long(uint64(timeout/pollunit)))
 	if rc == -1 {
 		return 0, casterr(err)
 	}
