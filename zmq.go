@@ -18,8 +18,7 @@
 package gozmq
 
 /*
-#cgo CFLAGS: -I/usr/local/include
-#cgo LDFLAGS: -L/usr/local/lib -lzmq
+#cgo pkg-config: libzmq
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>
