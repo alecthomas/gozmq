@@ -72,7 +72,7 @@ func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err error) {
 	}
 	defer C.zmq_msg_close(&m)
 	// Receive into message
-	if C.zmq_recv(s.s, &m, C.int(flags)); rc != 0 {
+	if rc, err = C.zmq_recv(s.s, &m, C.int(flags)); rc != 0 {
 		err = casterr(err)
 		return
 	}
