@@ -50,6 +50,7 @@ type Socket interface {
 	SetSockOptInt64(option Int64SocketOption, value int64) error
 	SetSockOptUInt64(option UInt64SocketOption, value uint64) error
 	SetSockOptString(option StringSocketOption, value string) error
+	SetSockOptStringNil(option StringSocketOption) error
 	GetSockOptInt(option IntSocketOption) (value int, err error)
 	GetSockOptInt64(option Int64SocketOption) (value int64, err error)
 	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error)
@@ -263,6 +264,15 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) er
 	defer C.free(unsafe.Pointer(v))
 	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(v), C.size_t(len(value))); rc != 0 {
 		return casterr(err)
+	}
+	return nil
+}
+
+// Set a string option on the socket to nil.
+// int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
+func (s *zmqSocket) SetSockOptStringNil(option StringSocketOption) error {
+	if C.zmq_setsockopt(s.s, C.int(option), nil, 0) != 0 {
+		return errno()
 	}
 	return nil
 }
