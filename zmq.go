@@ -32,11 +32,15 @@ import (
 	"unsafe"
 )
 
+// Represents a zmq context.
 type Context interface {
+	// Create a new socket in this context.
 	NewSocket(t SocketType) (Socket, error)
+	// Close the context.
 	Close()
 }
 
+// Represents a zmq socket.
 type Socket interface {
 	Bind(address string) error
 	Connect(address string) error
@@ -283,8 +287,8 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) er
 // Set a string option on the socket to nil.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *zmqSocket) SetSockOptStringNil(option StringSocketOption) error {
-	if C.zmq_setsockopt(s.s, C.int(option), nil, 0) != 0 {
-		return errno()
+	if rc, err := C.zmq_setsockopt(s.s, C.int(option), nil, 0); rc != 0 {
+		return casterr(err)
 	}
 	return nil
 }
