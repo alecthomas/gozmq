@@ -31,8 +31,9 @@ import (
 )
 
 var (
-	SNDHWM = IntSocketOption(C.ZMQ_SNDHWM)
-	RCVHWM = IntSocketOption(C.ZMQ_RCVHWM)
+	RCVMORE = IntSocketOption(C.ZMQ_RCVMORE)
+	SNDHWM  = IntSocketOption(C.ZMQ_SNDHWM)
+	RCVHWM  = IntSocketOption(C.ZMQ_RCVHWM)
 
 	// TODO Not documented in the man page...
 	//LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
@@ -100,6 +101,13 @@ func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err error) {
 	} else {
 		data = nil
 	}
+	return
+}
+
+// Portability helper
+func (s *zmqSocket) getRcvmore() (more bool, err error) {
+	value, err := s.GetSockOptInt(RCVMORE)
+	more = value != 0
 	return
 }
 

@@ -106,7 +106,6 @@ var (
 	RECOVERY_IVL      = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
 	SNDBUF            = UInt64SocketOption(C.ZMQ_SNDBUF)
 	RCVBUF            = UInt64SocketOption(C.ZMQ_RCVBUF)
-	RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
 	FD                = Int64SocketOption(C.ZMQ_FD)
 	EVENTS            = UInt64SocketOption(C.ZMQ_EVENTS)
 	TYPE              = UInt64SocketOption(C.ZMQ_TYPE)
@@ -392,18 +391,18 @@ func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err err
 	parts = make([][]byte, 0)
 	for {
 		var data []byte
-		var more uint64
+		var more bool
 
 		data, err = s.Recv(flags)
 		if err != nil {
 			return
 		}
 		parts = append(parts, data)
-		more, err = s.GetSockOptUInt64(RCVMORE)
+		more, err = s.getRcvmore()
 		if err != nil {
 			return
 		}
-		if more == 0 {
+		if !more {
 			break
 		}
 	}
