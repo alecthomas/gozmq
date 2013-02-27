@@ -32,7 +32,7 @@ import (
 
 var (
 	SNDHWM = IntSocketOption(C.ZMQ_SNDHWM)
-	RCVHWM = IntSocketOption(C.ZMQ_SNDHWM)
+	RCVHWM = IntSocketOption(C.ZMQ_RCVHWM)
 
 	// TODO Not documented in the man page...
 	//LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
