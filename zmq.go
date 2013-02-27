@@ -435,7 +435,11 @@ func Poll(items []PollItem, timeout time.Duration) (count int, err error) {
 		zitems[i].fd = pi.Fd.ToRaw()
 		zitems[i].events = C.short(pi.Events)
 	}
-	rc, err := C.zmq_poll(&zitems[0], C.int(len(zitems)), C.long(uint64(timeout/pollunit)))
+	ztimeout := C.long(-1)
+	if timeout >= 0 {
+		ztimeout = C.long(uint64(timeout/pollunit))
+	}
+	rc, err := C.zmq_poll(&zitems[0], C.int(len(zitems)), ztimeout)
 	if rc == -1 {
 		return 0, casterr(err)
 	}
