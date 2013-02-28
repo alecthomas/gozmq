@@ -28,6 +28,7 @@ import "C"
 import "unsafe"
 
 var (
+	RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
 	RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
 	SWAP              = Int64SocketOption(C.ZMQ_SWAP)
 	MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)
@@ -85,5 +86,12 @@ func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err error) {
 	} else {
 		data = nil
 	}
+	return
+}
+
+// Portability helper
+func (s *zmqSocket) getRcvmore() (more bool, err error) {
+	value, err := s.GetSockOptUInt64(RCVMORE)
+	more = value != 0
 	return
 }
