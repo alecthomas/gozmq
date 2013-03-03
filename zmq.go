@@ -201,12 +201,6 @@ func NewContext() (Context, error) {
 	return nil, casterr(err)
 }
 
-// int zmq_term (void *context);
-func (c *zmqContext) destroy() {
-	// Will this get called without being added by runtime.SetFinalizer()?
-	c.Close()
-}
-
 func (c *zmqContext) Close() {
 	C.zmq_term(c.c)
 }
@@ -236,13 +230,6 @@ func (s *zmqSocket) Close() error {
 	}
 	s.c = nil
 	return nil
-}
-
-func (s *zmqSocket) destroy() {
-	// Will this get called without being added by runtime.SetFinalizer()?
-	if err := s.Close(); err != nil {
-		panic("Error while destroying zmqSocket: " + err.Error() + "\n")
-	}
 }
 
 // Set an int option on the socket.
