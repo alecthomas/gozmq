@@ -30,7 +30,7 @@ import (
 	"unsafe"
 )
 
-var (
+const (
 	RCVMORE = IntSocketOption(C.ZMQ_RCVMORE)
 	SNDHWM  = IntSocketOption(C.ZMQ_SNDHWM)
 	RCVHWM  = IntSocketOption(C.ZMQ_RCVHWM)
