@@ -34,6 +34,9 @@ var (
 	MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)
 	HWM               = UInt64SocketOption(C.ZMQ_HWM)
 	NOBLOCK           = SendRecvOption(C.ZMQ_NOBLOCK)
+
+	// Forwards-compatible aliases:
+	DONTWAIT = NOBLOCK
 )
 
 // Send a message to the socket.

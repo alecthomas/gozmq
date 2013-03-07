@@ -49,6 +49,9 @@ var (
 
 	// Send/recv options
 	DONTWAIT = SendRecvOption(C.ZMQ_DONTWAIT)
+
+	// Deprecated aliases
+	NOBLOCK = DONTWAIT
 )
 
 // Send a message to the socket.
