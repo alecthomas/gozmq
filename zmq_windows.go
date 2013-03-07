@@ -17,6 +17,7 @@
 package gozmq
 
 /*
+#cgo pkg-config: libzmq
 #include <zmq.h>
 */
 import "C"

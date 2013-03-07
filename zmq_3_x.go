@@ -19,8 +19,7 @@
 package gozmq
 
 /*
-#cgo CFLAGS: -I/usr/local/include
-#cgo LDFLAGS: -L/usr/local/lib -lzmq
+#cgo pkg-config: libzmq
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,8 +31,9 @@ import (
 )
 
 const (
-	SNDHWM = IntSocketOption(C.ZMQ_SNDHWM)
-	RCVHWM = IntSocketOption(C.ZMQ_SNDHWM)
+	RCVMORE = IntSocketOption(C.ZMQ_RCVMORE)
+	SNDHWM  = IntSocketOption(C.ZMQ_SNDHWM)
+	RCVHWM  = IntSocketOption(C.ZMQ_RCVHWM)
 
 	// TODO Not documented in the man page...
 	//LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
@@ -42,8 +42,7 @@ const (
 	TCP_KEEPALIVE_CNT   = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_CNT)
 	TCP_KEEPALIVE_IDLE  = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_IDLE)
 	TCP_KEEPALIVE_INTVL = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_INTVL)
-	// TODO Make this work.
-	//TCP_ACCEPT_FILTER   = IntSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
+	TCP_ACCEPT_FILTER   = StringSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
 
 	// Message options
 	MORE = MessageOption(C.ZMQ_MORE)
@@ -59,8 +58,8 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) error {
 	// Copy data array into C-allocated buffer.
 	size := C.size_t(len(data))
 
-	if C.zmq_msg_init_size(&m, size) != 0 {
-		return errno()
+	if rc, err := C.zmq_msg_init_size(&m, size); rc != 0 {
+		return casterr(err)
 	}
 
 	if size > 0 {
@@ -68,10 +67,10 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) error {
 		C.memcpy(unsafe.Pointer(C.zmq_msg_data(&m)), unsafe.Pointer(&data[0]), size) // XXX I hope this works...(seems to)
 	}
 
-	if C.zmq_sendmsg(s.s, &m, C.int(flags)) == -1 {
+	if rc, err := C.zmq_sendmsg(s.s, &m, C.int(flags)); rc == -1 {
 		// zmq_send did not take ownership, free message
 		C.zmq_msg_close(&m)
-		return errno()
+		return casterr(err)
 	}
 	return nil
 }
@@ -81,16 +80,18 @@ func (s *zmqSocket) Send(data []byte, flags SendRecvOption) error {
 func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err error) {
 	// Allocate and initialise a new zmq_msg_t
 	var m C.zmq_msg_t
-	if C.zmq_msg_init(&m) != 0 {
-		err = errno()
+	var rc C.int
+	if rc, err = C.zmq_msg_init(&m); rc != 0 {
+		err = casterr(err)
 		return
 	}
 	defer C.zmq_msg_close(&m)
 	// Receive into message
-	if C.zmq_recvmsg(s.s, &m, C.int(flags)) == -1 {
-		err = errno()
+	if rc, err = C.zmq_recvmsg(s.s, &m, C.int(flags)); rc == -1 {
+		err = casterr(err)
 		return
 	}
+	err = nil
 	// Copy message data into a byte array
 	// FIXME Ideally this wouldn't require a copy.
 	size := C.zmq_msg_size(&m)
@@ -103,10 +104,17 @@ func (s *zmqSocket) Recv(flags SendRecvOption) (data []byte, err error) {
 	return
 }
 
+// Portability helper
+func (s *zmqSocket) getRcvmore() (more bool, err error) {
+	value, err := s.GetSockOptInt(RCVMORE)
+	more = value != 0
+	return
+}
+
 // run a zmq_proxy with in, out and capture sockets
 func Proxy(in, out, capture Socket) error {
-	if C.zmq_proxy(in.apiSocket(), out.apiSocket(), capture.apiSocket()) != 0 {
-		return errno()
+	if rc, err := C.zmq_proxy(in.apiSocket(), out.apiSocket(), capture.apiSocket()); rc != 0 {
+		return casterr(err)
 	}
 	return errors.New("zmq_proxy() returned unexpectedly.")
 }

@@ -190,6 +190,7 @@ var (
 ```go
 var (
 	// Additional ZMQ errors
+	ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
 	EFSM           error = zmqErrno(C.EFSM)
 	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
 	ETERM          error = zmqErrno(C.ETERM)
@@ -242,6 +243,7 @@ var (
 	TCP_KEEPALIVE_CNT   = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_CNT)
 	TCP_KEEPALIVE_IDLE  = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_IDLE)
 	TCP_KEEPALIVE_INTVL = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_INTVL)
+	TCP_ACCEPT_FILTER   = StringSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
 
 	// Message options
 	MORE = MessageOption(C.ZMQ_MORE)
@@ -261,10 +263,11 @@ run a zmq_device passing messages between in and out
 #### func  Poll
 
 ```go
-func Poll(items []PollItem, timeout int64) (count int, err error)
+func Poll(items []PollItem, timeout time.Duration) (count int, err error)
 ```
 Poll ZmqSockets and file descriptors for I/O readiness. Timeout is in
-microseconds.
+time.Duration. The smallest possible timeout is time.Millisecond for ZeroMQ
+version 3 and above, and time.Microsecond for earlier versions.
 
 #### func  Proxy
 
@@ -291,11 +294,14 @@ type BoolSocketOption int
 
 ```go
 type Context interface {
+	// Create a new socket in this context.
 	NewSocket(t SocketType) (Socket, error)
+	// Close the context.
 	Close()
 }
 ```
 
+Represents a zmq context.
 
 #### func  NewContext
 
@@ -383,6 +389,7 @@ type Socket interface {
 	SetSockOptInt64(option Int64SocketOption, value int64) error
 	SetSockOptUInt64(option UInt64SocketOption, value uint64) error
 	SetSockOptString(option StringSocketOption, value string) error
+	SetSockOptStringNil(option StringSocketOption) error
 	GetSockOptInt(option IntSocketOption) (value int, err error)
 	GetSockOptInt64(option Int64SocketOption) (value int64, err error)
 	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error)
@@ -392,6 +399,7 @@ type Socket interface {
 }
 ```
 
+Represents a zmq socket.
 
 #### type SocketType
 
@@ -426,3 +434,5 @@ type ZmqOsSocketType C.SOCKET
 ```go
 func (self ZmqOsSocketType) ToRaw() C.SOCKET
 ```
+
+*(generated from **.[godocdown](https://github.com/robertkrimen/godocdown).md** with `godocdown github.com/alecthomas/gozmq > README.md`)*

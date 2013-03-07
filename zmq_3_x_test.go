@@ -50,3 +50,47 @@ func TestProxy(t *testing.T) {
 	te.Recv(out, 0)
 	te.Recv(capture, 0)
 }
+
+func TestSocket_SetSockOptStringNil(t *testing.T) {
+	failed := make(chan bool, 2)
+	c, _ := NewContext()
+	defer c.Close()
+	go func() {
+		srv, _ := c.NewSocket(REP)
+		defer srv.Close()
+		srv.SetSockOptString(TCP_ACCEPT_FILTER, "127.0.0.1")
+		srv.SetSockOptString(TCP_ACCEPT_FILTER, "192.0.2.1")
+		srv.Bind(ADDRESS1) // 127.0.0.1 and 192.0.2.1 are allowed here.
+		// The test will fail if the following line is removed:
+		srv.SetSockOptStringNil(TCP_ACCEPT_FILTER)
+		srv.SetSockOptString(TCP_ACCEPT_FILTER, "192.0.2.2")
+		srv.Bind(ADDRESS2) // Only 192.0.2.1 is allowed here.
+		for {
+			if _, err := srv.Recv(0); err != nil {
+				break
+			}
+			srv.Send(nil, 0)
+		}
+	}()
+	go func() {
+		s2, _ := c.NewSocket(REQ)
+		defer s2.Close()
+		s2.SetSockOptInt(LINGER, 0)
+		s2.Connect(ADDRESS2)
+		s2.Send(nil, 0)
+		if _, err := s2.Recv(0); err == nil {
+			// 127.0.0.1 is supposed to be ignored by ADDRESS2:
+			t.Error("SetSockOptStringNil did not clear TCP_ACCEPT_FILTER.")
+		}
+		failed <- true
+	}()
+	s1, _ := c.NewSocket(REQ)
+	defer s1.Close()
+	s1.Connect(ADDRESS1)
+	s1.Send(nil, 0)
+	s1.Recv(0)
+	select {
+	case <-failed:
+	case <-time.After(50 * time.Millisecond):
+	}
+}
