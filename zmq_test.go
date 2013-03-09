@@ -18,6 +18,7 @@ package gozmq
 import (
 	"log"
 	"runtime"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -115,6 +116,34 @@ func TestCreateDestroyContext(t *testing.T) {
 	c.Close()
 	c, _ = NewContext()
 	c.Close()
+}
+
+func TestSocket_Connect(t *testing.T) {
+	c, _ := NewContext()
+	defer c.Close()
+	s, _ := c.NewSocket(REP)
+	defer s.Close()
+	if rc := s.Connect(ADDRESS1); rc != nil {
+		t.Errorf("Failed to bind to %s; %s", ADDRESS1, rc.Error())
+	}
+	bad_address := "a malformed address"
+	rc := s.Connect(bad_address)
+	switch rc {
+	case syscall.EINVAL: //pass
+	case nil:
+		t.Errorf("Connected to %s", bad_address)
+	default:
+		t.Errorf("Received incorrect error connecting to %s; %s", bad_address, rc.Error())
+	}
+	s.Close()
+	rc = s.Connect(ADDRESS1)
+	switch rc {
+	case ENOTSOCK: //pass
+	case nil:
+		t.Errorf("Connected a closed socket")
+	default:
+		t.Errorf("Expected ENOTSOCK, got %T(%d); %s", rc, rc, rc.Error())
+	}
 }
 
 func TestBindToLoopBack(t *testing.T) {
