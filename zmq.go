@@ -171,10 +171,18 @@ func (e zmqErrno) Error() string {
 // If possible, convert a syscall.Errno to a zmqErrno.
 func casterr(fromcgo error) error {
 	errno, ok := fromcgo.(syscall.Errno)
-	if ok && errno >= C.ZMQ_HAUSNUMERO {
-		return zmqErrno(errno)
+	if !ok {
+		return fromcgo
 	}
-	return fromcgo
+	zmqerrno := zmqErrno(errno)
+	switch zmqerrno {
+	case ENOTSOCK:
+		return zmqerrno
+	}
+	if zmqerrno >= C.ZMQ_HAUSNUMERO {
+		return zmqerrno
+	}
+	return errno
 }
 
 func getErrorForTesting() error {
