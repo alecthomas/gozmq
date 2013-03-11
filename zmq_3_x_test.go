@@ -27,21 +27,21 @@ const ADDR_PROXY_OUT = "tcp://127.0.0.1:24115"
 const ADDR_PROXY_CAP = "tcp://127.0.0.1:24116"
 
 func TestProxy(t *testing.T) {
+	te1, te2 := NewTestEnv(t), NewTestEnv(t)
+	exitOk := make(chan bool, 1)
 	go func() {
-		// the proxy will never exit so this goroutine will never terminate
-		te := NewTestEnv(t)
-		defer te.Close()
 		in := te.NewBoundSocket(ROUTER, ADDR_PROXY_IN)
 		out := te.NewBoundSocket(DEALER, ADDR_PROXY_OUT)
 		capture := te.NewBoundSocket(PUSH, ADDR_PROXY_CAP)
 		err := Proxy(in, out, capture)
 
-		// Should never get to here
-		t.Error("Proxy() failed: ", err)
+		select {
+		case <-exitOk:
+		default:
+			t.Error("Proxy() failed: ", err)
+		}
 	}()
 
-	te := NewTestEnv(t)
-	defer te.Close()
 	in := te.NewConnectedSocket(REQ, ADDR_PROXY_IN)
 	out := te.NewConnectedSocket(REP, ADDR_PROXY_OUT)
 	capture := te.NewConnectedSocket(PULL, ADDR_PROXY_CAP)
@@ -49,6 +49,36 @@ func TestProxy(t *testing.T) {
 	te.Send(in, nil, 0)
 	te.Recv(out, 0)
 	te.Recv(capture, 0)
+
+	te1.Close()
+	exitOk <- true
+	te2.Close()
+}
+
+func TestProxyNoCapture(t *testing.T) {
+	te1, te2 := NewTestEnv(t), NewTestEnv(t)
+	exitOk := make(chan bool, 1)
+	go func() {
+		in := te.NewBoundSocket(ROUTER, ADDR_PROXY_IN)
+		out := te.NewBoundSocket(DEALER, ADDR_PROXY_OUT)
+		err := Proxy(in, out, nil)
+
+		select {
+		case <-exitOk:
+		default:
+			t.Error("Proxy() failed: ", err)
+		}
+	}()
+
+	in := te.NewConnectedSocket(REQ, ADDR_PROXY_IN)
+	out := te.NewConnectedSocket(REP, ADDR_PROXY_OUT)
+	time.Sleep(1e8)
+	te.Send(in, nil, 0)
+	te.Recv(out, 0)
+
+	te1.Close()
+	exitOk <- true
+	te2.Close()
 }
 
 func TestSocket_SetSockOptStringNil(t *testing.T) {
