@@ -30,9 +30,9 @@ func TestProxy(t *testing.T) {
 	te1, te2 := NewTestEnv(t), NewTestEnv(t)
 	exitOk := make(chan bool, 1)
 	go func() {
-		in := te.NewBoundSocket(ROUTER, ADDR_PROXY_IN)
-		out := te.NewBoundSocket(DEALER, ADDR_PROXY_OUT)
-		capture := te.NewBoundSocket(PUSH, ADDR_PROXY_CAP)
+		in := te1.NewBoundSocket(ROUTER, ADDR_PROXY_IN)
+		out := te1.NewBoundSocket(DEALER, ADDR_PROXY_OUT)
+		capture := te1.NewBoundSocket(PUSH, ADDR_PROXY_CAP)
 		err := Proxy(in, out, capture)
 
 		select {
@@ -42,25 +42,25 @@ func TestProxy(t *testing.T) {
 		}
 	}()
 
-	in := te.NewConnectedSocket(REQ, ADDR_PROXY_IN)
-	out := te.NewConnectedSocket(REP, ADDR_PROXY_OUT)
-	capture := te.NewConnectedSocket(PULL, ADDR_PROXY_CAP)
+	in := te2.NewConnectedSocket(REQ, ADDR_PROXY_IN)
+	out := te2.NewConnectedSocket(REP, ADDR_PROXY_OUT)
+	capture := te2.NewConnectedSocket(PULL, ADDR_PROXY_CAP)
 	time.Sleep(1e8)
-	te.Send(in, nil, 0)
-	te.Recv(out, 0)
-	te.Recv(capture, 0)
+	te2.Send(in, nil, 0)
+	te2.Recv(out, 0)
+	te2.Recv(capture, 0)
 
-	te1.Close()
-	exitOk <- true
 	te2.Close()
+	exitOk <- true
+	te1.Close()
 }
 
 func TestProxyNoCapture(t *testing.T) {
 	te1, te2 := NewTestEnv(t), NewTestEnv(t)
 	exitOk := make(chan bool, 1)
 	go func() {
-		in := te.NewBoundSocket(ROUTER, ADDR_PROXY_IN)
-		out := te.NewBoundSocket(DEALER, ADDR_PROXY_OUT)
+		in := te1.NewBoundSocket(ROUTER, ADDR_PROXY_IN)
+		out := te1.NewBoundSocket(DEALER, ADDR_PROXY_OUT)
 		err := Proxy(in, out, nil)
 
 		select {
@@ -70,15 +70,15 @@ func TestProxyNoCapture(t *testing.T) {
 		}
 	}()
 
-	in := te.NewConnectedSocket(REQ, ADDR_PROXY_IN)
-	out := te.NewConnectedSocket(REP, ADDR_PROXY_OUT)
+	in := te2.NewConnectedSocket(REQ, ADDR_PROXY_IN)
+	out := te2.NewConnectedSocket(REP, ADDR_PROXY_OUT)
 	time.Sleep(1e8)
-	te.Send(in, nil, 0)
-	te.Recv(out, 0)
+	te2.Send(in, nil, 0)
+	te2.Recv(out, 0)
 
-	te1.Close()
-	exitOk <- true
 	te2.Close()
+	exitOk <- true
+	te1.Close()
 }
 
 func TestSocket_SetSockOptStringNil(t *testing.T) {
