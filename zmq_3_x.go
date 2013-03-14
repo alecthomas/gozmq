@@ -116,7 +116,11 @@ func (s *zmqSocket) getRcvmore() (more bool, err error) {
 
 // run a zmq_proxy with in, out and capture sockets
 func Proxy(in, out, capture Socket) error {
-	if rc, err := C.zmq_proxy(in.apiSocket(), out.apiSocket(), capture.apiSocket()); rc != 0 {
+	var c unsafe.Pointer
+	if capture != nil {
+		c = capture.apiSocket()
+	}
+	if rc, err := C.zmq_proxy(in.apiSocket(), out.apiSocket(), c); rc != 0 {
 		return casterr(err)
 	}
 	return errors.New("zmq_proxy() returned unexpectedly.")
