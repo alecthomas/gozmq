@@ -54,6 +54,48 @@ const (
 	NOBLOCK = DONTWAIT
 )
 
+// Get a context option.
+// int zmq_ctx_get (void *c, int);
+func (c *Context) get(option C.int) (int, error) {
+	if c.init(); c.err != nil {
+		return -1, c.err
+	}
+	var value C.int
+	var err error
+	if value, err = C.zmq_ctx_get(c.c, option); err != nil {
+		return -1, casterr(err)
+	}
+	return int(value), nil
+}
+
+// Set a context option.
+// int zmq_ctx_set (void *c, int, int);
+func (c *Context) set(option C.int, value int) error {
+	if c.init(); c.err != nil {
+		return c.err
+	}
+	if rc, err := C.zmq_ctx_set(c.c, option, C.int(value)); rc == -1 {
+		return casterr(err)
+	}
+	return nil
+}
+
+func (c *Context) IOThreads() (int, error) {
+	return c.get(C.ZMQ_IO_THREADS)
+}
+
+func (c *Context) MaxSockets() (int, error) {
+	return c.get(C.ZMQ_MAX_SOCKETS)
+}
+
+func (c *Context) SetIOThreads(value int) error {
+	return c.set(C.ZMQ_IO_THREADS, value)
+}
+
+func (c *Context) SetMaxSockets(value int) error {
+	return c.set(C.ZMQ_MAX_SOCKETS, value)
+}
+
 // Send a message to the socket.
 // int zmq_send (void *s, zmq_msg_t *msg, int flags);
 func (s *Socket) Send(data []byte, flags SendRecvOption) error {

@@ -118,6 +118,29 @@ func TestCreateDestroyContext(t *testing.T) {
 	c.Close()
 }
 
+func TestContext_IOThreads(t *testing.T) {
+	c, _ := NewContext()
+	defer c.Close()
+	if iothreads, err := c.IOThreads(); err != nil {
+		t.Fatalf("Failed to get IO_THREADS: %s", err.Error())
+	} else if iothreads != 1 {
+		t.Fatalf("Got IO_THREADS = %s", iothreads)
+	}
+}
+
+func TestContext_SetIOThreads(t *testing.T) {
+	c, _ := NewContext()
+	defer c.Close()
+	if err := c.SetIOThreads(2); err != nil {
+		t.Fatalf("Failed to set IO_THREADS: %s", err.Error())
+	}
+	if iothreads, err := c.IOThreads(); err != nil {
+		t.Fatalf("Failed to get IO_THREADS: %s", err.Error())
+	} else if iothreads != 2 {
+		t.Fatalf("Got IO_THREADS = %s", iothreads)
+	}
+}
+
 func TestSocket_Connect(t *testing.T) {
 	c, _ := NewContext()
 	defer c.Close()

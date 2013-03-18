@@ -39,6 +39,17 @@ const (
 	DONTWAIT = NOBLOCK
 )
 
+// Get a context option.
+func (c *Context) IOThreads() (int, error) {
+	return c.iothreads, nil
+}
+
+// Set a context option.
+func (c *Context) SetIOThreads(value int) error {
+	c.iothreads = value
+	return nil
+}
+
 // Send a message to the socket.
 // int zmq_send (void *s, zmq_msg_t *msg, int flags);
 func (s *Socket) Send(data []byte, flags SendRecvOption) error {

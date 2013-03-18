@@ -27,6 +27,7 @@ import "C"
 
 import (
 	"errors"
+	"sync"
 	"syscall"
 	"time"
 	"unsafe"
@@ -90,6 +91,7 @@ var (
 	// Additional ZMQ errors
 	ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
 	EFSM           error = zmqErrno(C.EFSM)
+	EINVAL         error = zmqErrno(C.EINVAL)
 	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
 	ETERM          error = zmqErrno(C.ETERM)
 	EMTHREAD       error = zmqErrno(C.EMTHREAD)
@@ -160,28 +162,44 @@ func getErrorForTesting() error {
  * There should generally be one context per application.
  */
 type Context struct {
-	c unsafe.Pointer
+	c         unsafe.Pointer
+	mutex     sync.Mutex // ensure init is only called once
+	init      func()     // func that calls zmq_init
+	err       error      // error returned from zmq_init
+	iothreads int        // hold the iothreads option until zmq_init time
 }
 
 // Create a new context.
-// void *zmq_init (int io_threads);
 func NewContext() (*Context, error) {
-	// TODO Pass something useful here. Number of cores?
-	c, err := C.zmq_init(1)
-	// C.NULL is correct but causes a runtime failure on darwin at present
-	if c != nil /*C.NULL*/ {
-		return &Context{c}, nil
+	c := &Context{iothreads: 1}
+	c.init = func() {
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
+		if c.c == nil && c.err == nil {
+			// C.NULL is correct but causes a runtime failure on darwin at present
+			if ptr, err := C.zmq_init(C.int(c.iothreads)); ptr != nil /*C.NULL*/ {
+				c.c = ptr
+			} else {
+				c.err = casterr(err)
+			}
+		}
 	}
-	return nil, casterr(err)
+	return c, nil
 }
 
 func (c *Context) Close() {
-	C.zmq_term(c.c)
+	// C.NULL is correct but causes a runtime failure on darwin at present
+	if c.c != nil /*C.NULL*/ {
+		C.zmq_term(c.c)
+	}
 }
 
 // Create a new socket.
 // void *zmq_socket (void *context, int type);
 func (c *Context) NewSocket(t SocketType) (*Socket, error) {
+	if c.init(); c.err != nil {
+		return nil, c.err
+	}
 	s, err := C.zmq_socket(c.c, C.int(t))
 	// C.NULL is correct but causes a runtime failure on darwin at present
 	if s != nil /*C.NULL*/ {
