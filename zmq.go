@@ -233,6 +233,9 @@ type zmqSocket struct {
 // Shutdown the socket.
 // int zmq_close (void *s);
 func (s *zmqSocket) Close() error {
+	if s.c == nil {
+		return ENOTSOCK
+	}
 	if rc, err := C.zmq_close(s.s); rc != 0 {
 		return casterr(err)
 	}
@@ -362,6 +365,9 @@ func (s *zmqSocket) Bind(address string) error {
 // Connect the socket to an address.
 // int zmq_connect (void *s, const char *addr);
 func (s *zmqSocket) Connect(address string) error {
+	if s.c == nil {
+		return ENOTSOCK
+	}
 	a := C.CString(address)
 	defer C.free(unsafe.Pointer(a))
 	if rc, err := C.zmq_connect(s.s, a); rc != 0 {
