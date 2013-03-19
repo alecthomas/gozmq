@@ -37,7 +37,7 @@ const ADDRESS_INPROC = "inproc://test"
 
 const SERVER_READY = "SERVER READY"
 
-func runServer(t *testing.T, c Context, callback func(s Socket)) chan bool {
+func runServer(t *testing.T, c *Context, callback func(s *Socket)) chan bool {
 	finished := make(chan bool)
 	go func() {
 		runtime.LockOSThread()
@@ -172,7 +172,7 @@ func TestSetSockOptString(t *testing.T) {
 func TestMultipart(t *testing.T) {
 	c, _ := NewContext()
 	defer c.Close()
-	finished := runServer(t, c, func(s Socket) {
+	finished := runServer(t, c, func(s *Socket) {
 		parts, rc := s.RecvMultipart(0)
 		if rc != nil {
 			t.Errorf("Failed to receive multipart message; %s", rc.Error())
@@ -329,8 +329,8 @@ func BenchmarkSendReceive1MBinproc(b *testing.B) {
 
 // A helper to make tests less verbose
 type testEnv struct {
-	context Context
-	sockets []Socket
+	context *Context
+	sockets []*Socket
 	t       *testing.T
 }
 
@@ -346,7 +346,7 @@ func NewTestEnv(t *testing.T) *testEnv {
 	return &testEnv{context: c, t: t}
 }
 
-func (te *testEnv) NewSocket(t SocketType) Socket {
+func (te *testEnv) NewSocket(t SocketType) *Socket {
 	s, err := te.context.NewSocket(t)
 	if err != nil {
 		log.Panicf("Failed to Create socket of type %v: %v", t, err)
@@ -354,7 +354,7 @@ func (te *testEnv) NewSocket(t SocketType) Socket {
 	return s
 }
 
-func (te *testEnv) NewBoundSocket(t SocketType, bindAddr string) Socket {
+func (te *testEnv) NewBoundSocket(t SocketType, bindAddr string) *Socket {
 	s := te.NewSocket(t)
 	if err := s.Bind(bindAddr); err != nil {
 		log.Panicf("Failed to connect to %v: %v", bindAddr, err)
@@ -363,7 +363,7 @@ func (te *testEnv) NewBoundSocket(t SocketType, bindAddr string) Socket {
 	return s
 }
 
-func (te *testEnv) NewConnectedSocket(t SocketType, connectAddr string) Socket {
+func (te *testEnv) NewConnectedSocket(t SocketType, connectAddr string) *Socket {
 	s := te.NewSocket(t)
 	if err := s.Connect(connectAddr); err != nil {
 		log.Panicf("Failed to connect to %v: %v", connectAddr, err)
@@ -372,7 +372,7 @@ func (te *testEnv) NewConnectedSocket(t SocketType, connectAddr string) Socket {
 	return s
 }
 
-func (te *testEnv) pushSocket(s Socket) {
+func (te *testEnv) pushSocket(s *Socket) {
 	te.sockets = append(te.sockets, s)
 }
 
@@ -392,13 +392,13 @@ func (te *testEnv) Close() {
 	runtime.UnlockOSThread()
 }
 
-func (te *testEnv) Send(sock Socket, data []byte, flags SendRecvOption) {
+func (te *testEnv) Send(sock *Socket, data []byte, flags SendRecvOption) {
 	if err := sock.Send(data, flags); err != nil {
 		te.t.Errorf("Send failed")
 	}
 }
 
-func (te *testEnv) Recv(sock Socket, flags SendRecvOption) []byte {
+func (te *testEnv) Recv(sock *Socket, flags SendRecvOption) []byte {
 	data, err := sock.Recv(flags)
 	if err != nil {
 		te.t.Errorf("Receive failed")
