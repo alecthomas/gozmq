@@ -11,6 +11,14 @@ Note that this is *not* the same as [this
 implementation](http://github.com/boggle/gozero) or [this
 implementation](http://code.google.com/p/gozmq/).
 
+## Upgrading
+
+GoZMQ has made some public changes that will break old code.  Fortunately, we've also written a tool based on `go fix` that will upgrade your code for you!  Here's how to run it over your source (after making a backup of course):
+
+    go get github.com/alecthomas/gozmq/gozmqfix
+    cd $YOUR_SOURCE_DIR
+    gozmqfix .
+
 ## Installing
 
 GoZMQ currently supports ZMQ 2.1.x, 2.2.x and *basic* support for 3.x. Following are instructions on how to compile against these versions.
@@ -144,7 +152,7 @@ following (educated) assumptions:
 ## Usage
 
 ```go
-var (
+const (
 	// NewSocket types
 	PAIR   = SocketType(C.ZMQ_PAIR)
 	PUB    = SocketType(C.ZMQ_PUB)
@@ -173,7 +181,6 @@ var (
 	RECOVERY_IVL      = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
 	SNDBUF            = UInt64SocketOption(C.ZMQ_SNDBUF)
 	RCVBUF            = UInt64SocketOption(C.ZMQ_RCVBUF)
-	RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
 	FD                = Int64SocketOption(C.ZMQ_FD)
 	EVENTS            = UInt64SocketOption(C.ZMQ_EVENTS)
 	TYPE              = UInt64SocketOption(C.ZMQ_TYPE)
@@ -188,18 +195,7 @@ var (
 ```
 
 ```go
-var (
-	// Additional ZMQ errors
-	ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
-	EFSM           error = zmqErrno(C.EFSM)
-	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
-	ETERM          error = zmqErrno(C.ETERM)
-	EMTHREAD       error = zmqErrno(C.EMTHREAD)
-)
-```
-
-```go
-var (
+const (
 	POLLIN  = PollEvents(C.ZMQ_POLLIN)
 	POLLOUT = PollEvents(C.ZMQ_POLLOUT)
 	POLLERR = PollEvents(C.ZMQ_POLLERR)
@@ -207,7 +203,7 @@ var (
 ```
 
 ```go
-var (
+const (
 	STREAMER  = DeviceType(C.ZMQ_STREAMER)
 	FORWARDER = DeviceType(C.ZMQ_FORWARDER)
 	QUEUE     = DeviceType(C.ZMQ_QUEUE)
@@ -215,26 +211,31 @@ var (
 ```
 
 ```go
-var (
+const (
 	RCVTIMEO = IntSocketOption(C.ZMQ_RCVTIMEO)
 	SNDTIMEO = IntSocketOption(C.ZMQ_SNDTIMEO)
 )
 ```
 
 ```go
-var (
+const (
+	RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
 	RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
 	SWAP              = Int64SocketOption(C.ZMQ_SWAP)
 	MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)
 	HWM               = UInt64SocketOption(C.ZMQ_HWM)
 	NOBLOCK           = SendRecvOption(C.ZMQ_NOBLOCK)
+
+	// Forwards-compatible aliases:
+	DONTWAIT = NOBLOCK
 )
 ```
 
 ```go
-var (
-	SNDHWM = IntSocketOption(C.ZMQ_SNDHWM)
-	RCVHWM = IntSocketOption(C.ZMQ_SNDHWM)
+const (
+	RCVMORE = IntSocketOption(C.ZMQ_RCVMORE)
+	SNDHWM  = IntSocketOption(C.ZMQ_SNDHWM)
+	RCVHWM  = IntSocketOption(C.ZMQ_RCVHWM)
 
 	// TODO Not documented in the man page...
 	//LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
@@ -250,13 +251,27 @@ var (
 
 	// Send/recv options
 	DONTWAIT = SendRecvOption(C.ZMQ_DONTWAIT)
+
+	// Deprecated aliases
+	NOBLOCK = DONTWAIT
+)
+```
+
+```go
+var (
+	// Additional ZMQ errors
+	ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
+	EFSM           error = zmqErrno(C.EFSM)
+	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
+	ETERM          error = zmqErrno(C.ETERM)
+	EMTHREAD       error = zmqErrno(C.EMTHREAD)
 )
 ```
 
 #### func  Device
 
 ```go
-func Device(t DeviceType, in, out Socket) error
+func Device(t DeviceType, in, out *Socket) error
 ```
 run a zmq_device passing messages between in and out
 
@@ -272,7 +287,7 @@ version 3 and above, and time.Microsecond for earlier versions.
 #### func  Proxy
 
 ```go
-func Proxy(in, out, capture Socket) error
+func Proxy(in, out, capture *Socket) error
 ```
 run a zmq_proxy with in, out and capture sockets
 
@@ -293,22 +308,32 @@ type BoolSocketOption int
 #### type Context
 
 ```go
-type Context interface {
-	// Create a new socket in this context.
-	NewSocket(t SocketType) (Socket, error)
-	// Close the context.
-	Close()
+type Context struct {
 }
 ```
 
-Represents a zmq context.
+* A context handles socket creation and asynchronous message delivery. * There
+should generally be one context per application.
 
 #### func  NewContext
 
 ```go
-func NewContext() (Context, error)
+func NewContext() (*Context, error)
 ```
 Create a new context. void *zmq_init (int io_threads);
+
+#### func (*Context) Close
+
+```go
+func (c *Context) Close()
+```
+
+#### func (*Context) NewSocket
+
+```go
+func (c *Context) NewSocket(t SocketType) (*Socket, error)
+```
+Create a new socket. void *zmq_socket (void *context, int type);
 
 #### type DeviceType
 
@@ -349,14 +374,14 @@ type PollEvents C.short
 
 ```go
 type PollItem struct {
-	Socket  Socket          // socket to poll for events on
+	Socket  *Socket         // socket to poll for events on
 	Fd      ZmqOsSocketType // fd to poll for events on as returned from os.File.Fd()
 	Events  PollEvents      // event set to poll for
 	REvents PollEvents      // events that were present
 }
 ```
 
-Item to poll for read/write events on, either a Socket or a file descriptor
+Item to poll for read/write events on, either a *Socket or a file descriptor
 
 #### type PollItems
 
@@ -376,30 +401,139 @@ type SendRecvOption int
 #### type Socket
 
 ```go
-type Socket interface {
-	Bind(address string) error
-	Connect(address string) error
-	Send(data []byte, flags SendRecvOption) error
-	Recv(flags SendRecvOption) (data []byte, err error)
-	RecvMultipart(flags SendRecvOption) (parts [][]byte, err error)
-	SendMultipart(parts [][]byte, flags SendRecvOption) (err error)
-	Close() error
-
-	SetSockOptInt(option IntSocketOption, value int) error
-	SetSockOptInt64(option Int64SocketOption, value int64) error
-	SetSockOptUInt64(option UInt64SocketOption, value uint64) error
-	SetSockOptString(option StringSocketOption, value string) error
-	SetSockOptStringNil(option StringSocketOption) error
-	GetSockOptInt(option IntSocketOption) (value int, err error)
-	GetSockOptInt64(option Int64SocketOption) (value int64, err error)
-	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error)
-	GetSockOptString(option StringSocketOption) (value string, err error)
-	GetSockOptBool(option BoolSocketOption) (value bool, err error)
-	// contains filtered or unexported methods
+type Socket struct {
 }
 ```
 
-Represents a zmq socket.
+
+#### func (*Socket) Bind
+
+```go
+func (s *Socket) Bind(address string) error
+```
+Bind the socket to a listening address. int zmq_bind (void *s, const char
+*addr);
+
+#### func (*Socket) Close
+
+```go
+func (s *Socket) Close() error
+```
+Shutdown the socket. int zmq_close (void *s);
+
+#### func (*Socket) Connect
+
+```go
+func (s *Socket) Connect(address string) error
+```
+Connect the socket to an address. int zmq_connect (void *s, const char *addr);
+
+#### func (*Socket) GetSockOptBool
+
+```go
+func (s *Socket) GetSockOptBool(option BoolSocketOption) (value bool, err error)
+```
+
+#### func (*Socket) GetSockOptInt
+
+```go
+func (s *Socket) GetSockOptInt(option IntSocketOption) (value int, err error)
+```
+Get an int option from the socket. int zmq_getsockopt (void *s, int option, void
+*optval, size_t *optvallen);
+
+#### func (*Socket) GetSockOptInt64
+
+```go
+func (s *Socket) GetSockOptInt64(option Int64SocketOption) (value int64, err error)
+```
+Get an int64 option from the socket. int zmq_getsockopt (void *s, int option,
+void *optval, size_t *optvallen);
+
+#### func (*Socket) GetSockOptString
+
+```go
+func (s *Socket) GetSockOptString(option StringSocketOption) (value string, err error)
+```
+Get a string option from the socket. int zmq_getsockopt (void *s, int option,
+void *optval, size_t *optvallen);
+
+#### func (*Socket) GetSockOptUInt64
+
+```go
+func (s *Socket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error)
+```
+Get a uint64 option from the socket. int zmq_getsockopt (void *s, int option,
+void *optval, size_t *optvallen);
+
+#### func (*Socket) Recv
+
+```go
+func (s *Socket) Recv(flags SendRecvOption) (data []byte, err error)
+```
+Receive a message from the socket. int zmq_recv (void *s, zmq_msg_t *msg, int
+flags);
+
+#### func (*Socket) RecvMultipart
+
+```go
+func (s *Socket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err error)
+```
+Receive a multipart message.
+
+#### func (*Socket) Send
+
+```go
+func (s *Socket) Send(data []byte, flags SendRecvOption) error
+```
+Send a message to the socket. int zmq_send (void *s, zmq_msg_t *msg, int flags);
+
+#### func (*Socket) SendMultipart
+
+```go
+func (s *Socket) SendMultipart(parts [][]byte, flags SendRecvOption) (err error)
+```
+Send a multipart message.
+
+#### func (*Socket) SetSockOptInt
+
+```go
+func (s *Socket) SetSockOptInt(option IntSocketOption, value int) error
+```
+Set an int option on the socket. int zmq_setsockopt (void *s, int option, const
+void *optval, size_t optvallen);
+
+#### func (*Socket) SetSockOptInt64
+
+```go
+func (s *Socket) SetSockOptInt64(option Int64SocketOption, value int64) error
+```
+Set an int64 option on the socket. int zmq_setsockopt (void *s, int option,
+const void *optval, size_t optvallen);
+
+#### func (*Socket) SetSockOptString
+
+```go
+func (s *Socket) SetSockOptString(option StringSocketOption, value string) error
+```
+Set a string option on the socket. int zmq_setsockopt (void *s, int option,
+const void *optval, size_t optvallen);
+
+#### func (*Socket) SetSockOptStringNil
+
+```go
+func (s *Socket) SetSockOptStringNil(option StringSocketOption) error
+```
+Set a string option on the socket to nil. int zmq_setsockopt (void *s, int
+option, const void *optval, size_t optvallen);
+
+#### func (*Socket) SetSockOptUInt64
+
+```go
+func (s *Socket) SetSockOptUInt64(option UInt64SocketOption, value uint64) error
+```
+Set a uint64 option on the socket. int zmq_setsockopt (void *s, int option,
+const void *optval, size_t optvallen);
 
 #### type SocketType
 

@@ -32,40 +32,6 @@ import (
 	"unsafe"
 )
 
-// Represents a zmq context.
-type Context interface {
-	// Create a new socket in this context.
-	NewSocket(t SocketType) (Socket, error)
-	// Close the context.
-	Close()
-}
-
-// Represents a zmq socket.
-type Socket interface {
-	Bind(address string) error
-	Connect(address string) error
-	Send(data []byte, flags SendRecvOption) error
-	Recv(flags SendRecvOption) (data []byte, err error)
-	RecvMultipart(flags SendRecvOption) (parts [][]byte, err error)
-	SendMultipart(parts [][]byte, flags SendRecvOption) (err error)
-	Close() error
-
-	SetSockOptInt(option IntSocketOption, value int) error
-	SetSockOptInt64(option Int64SocketOption, value int64) error
-	SetSockOptUInt64(option UInt64SocketOption, value uint64) error
-	SetSockOptString(option StringSocketOption, value string) error
-	SetSockOptStringNil(option StringSocketOption) error
-	GetSockOptInt(option IntSocketOption) (value int, err error)
-	GetSockOptInt64(option Int64SocketOption) (value int64, err error)
-	GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error)
-	GetSockOptString(option StringSocketOption) (value string, err error)
-	GetSockOptBool(option BoolSocketOption) (value bool, err error)
-
-	// Package local function makes this interface unimplementable outside
-	// of this package which removes some of the point of using an interface
-	apiSocket() unsafe.Pointer
-}
-
 type SocketType int
 
 type IntSocketOption int
@@ -193,46 +159,46 @@ func getErrorForTesting() error {
  * A context handles socket creation and asynchronous message delivery.
  * There should generally be one context per application.
  */
-type zmqContext struct {
+type Context struct {
 	c unsafe.Pointer
 }
 
 // Create a new context.
 // void *zmq_init (int io_threads);
-func NewContext() (Context, error) {
+func NewContext() (*Context, error) {
 	// TODO Pass something useful here. Number of cores?
 	c, err := C.zmq_init(1)
 	// C.NULL is correct but causes a runtime failure on darwin at present
 	if c != nil /*C.NULL*/ {
-		return &zmqContext{c}, nil
+		return &Context{c}, nil
 	}
 	return nil, casterr(err)
 }
 
-func (c *zmqContext) Close() {
+func (c *Context) Close() {
 	C.zmq_term(c.c)
 }
 
 // Create a new socket.
 // void *zmq_socket (void *context, int type);
-func (c *zmqContext) NewSocket(t SocketType) (Socket, error) {
+func (c *Context) NewSocket(t SocketType) (*Socket, error) {
 	s, err := C.zmq_socket(c.c, C.int(t))
 	// C.NULL is correct but causes a runtime failure on darwin at present
 	if s != nil /*C.NULL*/ {
-		return &zmqSocket{c: c, s: s}, nil
+		return &Socket{c: c, s: s}, nil
 	}
 	return nil, casterr(err)
 }
 
-type zmqSocket struct {
+type Socket struct {
 	// XXX Ensure the zmq context doesn't get destroyed underneath us.
-	c *zmqContext
+	c *Context
 	s unsafe.Pointer
 }
 
 // Shutdown the socket.
 // int zmq_close (void *s);
-func (s *zmqSocket) Close() error {
+func (s *Socket) Close() error {
 	if s.c == nil {
 		return ENOTSOCK
 	}
@@ -245,7 +211,7 @@ func (s *zmqSocket) Close() error {
 
 // Set an int option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
-func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
+func (s *Socket) SetSockOptInt(option IntSocketOption, value int) error {
 	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); rc != 0 {
 		return casterr(err)
 	}
@@ -254,7 +220,7 @@ func (s *zmqSocket) SetSockOptInt(option IntSocketOption, value int) error {
 
 // Set an int64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
-func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error {
+func (s *Socket) SetSockOptInt64(option Int64SocketOption, value int64) error {
 	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); rc != 0 {
 		return casterr(err)
 	}
@@ -263,7 +229,7 @@ func (s *zmqSocket) SetSockOptInt64(option Int64SocketOption, value int64) error
 
 // Set a uint64 option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
-func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) error {
+func (s *Socket) SetSockOptUInt64(option UInt64SocketOption, value uint64) error {
 	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); rc != 0 {
 		return casterr(err)
 	}
@@ -272,7 +238,7 @@ func (s *zmqSocket) SetSockOptUInt64(option UInt64SocketOption, value uint64) er
 
 // Set a string option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
-func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) error {
+func (s *Socket) SetSockOptString(option StringSocketOption, value string) error {
 	v := C.CString(value)
 	defer C.free(unsafe.Pointer(v))
 	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(v), C.size_t(len(value))); rc != 0 {
@@ -283,7 +249,7 @@ func (s *zmqSocket) SetSockOptString(option StringSocketOption, value string) er
 
 // Set a string option on the socket to nil.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
-func (s *zmqSocket) SetSockOptStringNil(option StringSocketOption) error {
+func (s *Socket) SetSockOptStringNil(option StringSocketOption) error {
 	if rc, err := C.zmq_setsockopt(s.s, C.int(option), nil, 0); rc != 0 {
 		return casterr(err)
 	}
@@ -292,7 +258,7 @@ func (s *zmqSocket) SetSockOptStringNil(option StringSocketOption) error {
 
 // Get an int option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptInt(option IntSocketOption) (value int, err error) {
+func (s *Socket) GetSockOptInt(option IntSocketOption) (value int, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
 	var rc C.int
 	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size); rc != 0 {
@@ -304,7 +270,7 @@ func (s *zmqSocket) GetSockOptInt(option IntSocketOption) (value int, err error)
 
 // Get an int64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, err error) {
+func (s *Socket) GetSockOptInt64(option Int64SocketOption) (value int64, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
 	var rc C.int
 	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size); rc != 0 {
@@ -316,7 +282,7 @@ func (s *zmqSocket) GetSockOptInt64(option Int64SocketOption) (value int64, err 
 
 // Get a uint64 option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error) {
+func (s *Socket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
 	var rc C.int
 	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size); rc != 0 {
@@ -329,7 +295,7 @@ func (s *zmqSocket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, e
 
 // Get a string option from the socket.
 // int zmq_getsockopt (void *s, int option, void *optval, size_t *optvallen);
-func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, err error) {
+func (s *Socket) GetSockOptString(option StringSocketOption) (value string, err error) {
 	var buffer [1024]byte
 	var size C.size_t = 1024
 	var rc C.int
@@ -341,7 +307,7 @@ func (s *zmqSocket) GetSockOptString(option StringSocketOption) (value string, e
 	return
 }
 
-func (s *zmqSocket) GetSockOptBool(option BoolSocketOption) (value bool, err error) {
+func (s *Socket) GetSockOptBool(option BoolSocketOption) (value bool, err error) {
 	size := C.size_t(unsafe.Sizeof(value))
 	var rc C.int
 	if rc, err = C.zmq_getsockopt(s.s, C.int(option), unsafe.Pointer(&value), &size); rc != 0 {
@@ -353,7 +319,7 @@ func (s *zmqSocket) GetSockOptBool(option BoolSocketOption) (value bool, err err
 
 // Bind the socket to a listening address.
 // int zmq_bind (void *s, const char *addr);
-func (s *zmqSocket) Bind(address string) error {
+func (s *Socket) Bind(address string) error {
 	a := C.CString(address)
 	defer C.free(unsafe.Pointer(a))
 	if rc, err := C.zmq_bind(s.s, a); rc != 0 {
@@ -364,7 +330,7 @@ func (s *zmqSocket) Bind(address string) error {
 
 // Connect the socket to an address.
 // int zmq_connect (void *s, const char *addr);
-func (s *zmqSocket) Connect(address string) error {
+func (s *Socket) Connect(address string) error {
 	if s.c == nil {
 		return ENOTSOCK
 	}
@@ -377,7 +343,7 @@ func (s *zmqSocket) Connect(address string) error {
 }
 
 // Send a multipart message.
-func (s *zmqSocket) SendMultipart(parts [][]byte, flags SendRecvOption) (err error) {
+func (s *Socket) SendMultipart(parts [][]byte, flags SendRecvOption) (err error) {
 	for i := 0; i < len(parts)-1; i++ {
 		if err = s.Send(parts[i], SNDMORE|flags); err != nil {
 			return
@@ -388,7 +354,7 @@ func (s *zmqSocket) SendMultipart(parts [][]byte, flags SendRecvOption) (err err
 }
 
 // Receive a multipart message.
-func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err error) {
+func (s *Socket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err error) {
 	parts = make([][]byte, 0)
 	for {
 		var data []byte
@@ -411,13 +377,13 @@ func (s *zmqSocket) RecvMultipart(flags SendRecvOption) (parts [][]byte, err err
 }
 
 // return the
-func (s *zmqSocket) apiSocket() unsafe.Pointer {
+func (s *Socket) apiSocket() unsafe.Pointer {
 	return s.s
 }
 
-// Item to poll for read/write events on, either a Socket or a file descriptor
+// Item to poll for read/write events on, either a *Socket or a file descriptor
 type PollItem struct {
-	Socket  Socket          // socket to poll for events on
+	Socket  *Socket         // socket to poll for events on
 	Fd      ZmqOsSocketType // fd to poll for events on as returned from os.File.Fd()
 	Events  PollEvents      // event set to poll for
 	REvents PollEvents      // events that were present
@@ -453,7 +419,7 @@ func Poll(items []PollItem, timeout time.Duration) (count int, err error) {
 }
 
 // run a zmq_device passing messages between in and out
-func Device(t DeviceType, in, out Socket) error {
+func Device(t DeviceType, in, out *Socket) error {
 	if rc, err := C.zmq_device(C.int(t), in.apiSocket(), out.apiSocket()); rc != 0 {
 		return casterr(err)
 	}
