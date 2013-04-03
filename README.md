@@ -262,6 +262,7 @@ var (
 	// Additional ZMQ errors
 	ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
 	EFSM           error = zmqErrno(C.EFSM)
+	EINVAL         error = zmqErrno(C.EINVAL)
 	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
 	ETERM          error = zmqErrno(C.ETERM)
 	EMTHREAD       error = zmqErrno(C.EMTHREAD)
@@ -320,12 +321,25 @@ should generally be one context per application.
 ```go
 func NewContext() (*Context, error)
 ```
-Create a new context. void *zmq_init (int io_threads);
+Create a new context.
 
 #### func (*Context) Close
 
 ```go
 func (c *Context) Close()
+```
+
+#### func (*Context) IOThreads
+
+```go
+func (c *Context) IOThreads() (int, error)
+```
+Get a context option.
+
+#### func (*Context) MaxSockets
+
+```go
+func (c *Context) MaxSockets() (int, error)
 ```
 
 #### func (*Context) NewSocket
@@ -334,6 +348,19 @@ func (c *Context) Close()
 func (c *Context) NewSocket(t SocketType) (*Socket, error)
 ```
 Create a new socket. void *zmq_socket (void *context, int type);
+
+#### func (*Context) SetIOThreads
+
+```go
+func (c *Context) SetIOThreads(value int) error
+```
+Set a context option.
+
+#### func (*Context) SetMaxSockets
+
+```go
+func (c *Context) SetMaxSockets(value int) error
+```
 
 #### type DeviceType
 
