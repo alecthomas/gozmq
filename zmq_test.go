@@ -190,6 +190,12 @@ func TestSetSockOptString(t *testing.T) {
 	if rc := s.SetSockOptString(SUBSCRIBE, "TEST"); rc != nil {
 		t.Errorf("Failed to subscribe; %v", rc)
 	}
+	if rc := s.SetSubscribe("TEST"); rc != nil {
+		t.Errorf("Failed to subscribe; %v", rc)
+	}
+	if rc := s.SetUnsubscribe("TEST"); rc != nil {
+		t.Errorf("Failed to unsubscribe; %v", rc)
+	}
 }
 
 func TestMultipart(t *testing.T) {

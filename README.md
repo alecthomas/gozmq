@@ -433,6 +433,24 @@ type Socket struct {
 ```
 
 
+#### func (*Socket) Affinity
+
+```go
+func (s *Socket) Affinity() (uint64, error)
+```
+ZMQ_AFFINITY: Retrieve I/O thread affinity.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc7
+
+#### func (*Socket) Backlog
+
+```go
+func (s *Socket) Backlog() (int, error)
+```
+ZMQ_BACKLOG: Retrieve maximum length of the queue of outstanding connections.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc18
+
 #### func (*Socket) Bind
 
 ```go
@@ -454,6 +472,15 @@ Shutdown the socket. int zmq_close (void *s);
 func (s *Socket) Connect(address string) error
 ```
 Connect the socket to an address. int zmq_connect (void *s, const char *addr);
+
+#### func (*Socket) Events
+
+```go
+func (s *Socket) Events() (uint64, error)
+```
+ZMQ_EVENTS: Retrieve socket event state.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc20
 
 #### func (*Socket) GetSockOptBool
 
@@ -493,6 +520,114 @@ func (s *Socket) GetSockOptUInt64(option UInt64SocketOption) (value uint64, err 
 Get a uint64 option from the socket. int zmq_getsockopt (void *s, int option,
 void *optval, size_t *optvallen);
 
+#### func (*Socket) HWM
+
+```go
+func (s *Socket) HWM() (uint64, error)
+```
+ZMQ_HWM: Retrieve high water mark.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc5
+
+#### func (*Socket) Identity
+
+```go
+func (s *Socket) Identity() (string, error)
+```
+ZMQ_IDENTITY: Retrieve socket identity.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc8
+
+#### func (*Socket) Linger
+
+```go
+func (s *Socket) Linger() (time.Duration, error)
+```
+ZMQ_LINGER: Retrieve linger period for socket shutdown.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc15
+
+#### func (*Socket) McastLoop
+
+```go
+func (s *Socket) McastLoop() (bool, error)
+```
+ZMQ_MCAST_LOOP: Control multicast loop-back.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc12
+
+#### func (*Socket) Rate
+
+```go
+func (s *Socket) Rate() (int64, error)
+```
+ZMQ_RATE: Retrieve multicast data rate.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc9
+
+#### func (*Socket) RcvHWM
+
+```go
+func (s *Socket) RcvHWM() (int, error)
+```
+ZMQ_RCVHWM: Retrieve high water mark for inbound messages.
+
+See: http://api.zeromq.org/3.2:zmq-getsockopt#toc6
+
+#### func (*Socket) RcvMore
+
+```go
+func (s *Socket) RcvMore() (bool, error)
+```
+ZMQ_RCVMORE: More message parts to follow.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc4
+
+#### func (*Socket) RcvTimeout
+
+```go
+func (s *Socket) RcvTimeout() (time.Duration, error)
+```
+ZMQ_RCVTIMEO: Maximum time before a socket operation returns with EAGAIN.
+
+See: http://api.zeromq.org/2.2:zmq-getsockopt#toc6
+
+#### func (*Socket) Rcvbuf
+
+```go
+func (s *Socket) Rcvbuf() (uint64, error)
+```
+ZMQ_RCVBUF: Retrieve kernel receive buffer size.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc14
+
+#### func (*Socket) ReconnectIvl
+
+```go
+func (s *Socket) ReconnectIvl() (time.Duration, error)
+```
+ZMQ_RECONNECT_IVL: Retrieve reconnection interval.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc16
+
+#### func (*Socket) ReconnectIvlMax
+
+```go
+func (s *Socket) ReconnectIvlMax() (time.Duration, error)
+```
+ZMQ_RECONNECT_IVL_MAX: Retrieve maximum reconnection interval.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc17
+
+#### func (*Socket) RecoveryIvl
+
+```go
+func (s *Socket) RecoveryIvl() (time.Duration, error)
+```
+ZMQ_RECOVERY_IVL_MSEC: Get multicast recovery interval in milliseconds.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc11
+
 #### func (*Socket) Recv
 
 ```go
@@ -521,6 +656,150 @@ Send a message to the socket. int zmq_send (void *s, zmq_msg_t *msg, int flags);
 func (s *Socket) SendMultipart(parts [][]byte, flags SendRecvOption) (err error)
 ```
 Send a multipart message.
+
+#### func (*Socket) SetAffinity
+
+```go
+func (s *Socket) SetAffinity(value uint64) error
+```
+ZMQ_AFFINITY: Set I/O thread affinity.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc5
+
+#### func (*Socket) SetBacklog
+
+```go
+func (s *Socket) SetBacklog(value int) error
+```
+ZMQ_BACKLOG: Set maximum length of the queue of outstanding connections.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc18
+
+#### func (*Socket) SetHWM
+
+```go
+func (s *Socket) SetHWM(value uint64) error
+```
+ZMQ_HWM: Set high water mark.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc3
+
+#### func (*Socket) SetIdentity
+
+```go
+func (s *Socket) SetIdentity(value string) error
+```
+ZMQ_IDENTITY: Set socket identity.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc6
+
+#### func (*Socket) SetLinger
+
+```go
+func (s *Socket) SetLinger(value time.Duration) error
+```
+ZMQ_LINGER: Set linger period for socket shutdown.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc15
+
+#### func (*Socket) SetMcastLoop
+
+```go
+func (s *Socket) SetMcastLoop(value bool) error
+```
+ZMQ_MCAST_LOOP: Control multicast loop-back.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc12
+
+#### func (*Socket) SetRate
+
+```go
+func (s *Socket) SetRate(value int64) error
+```
+ZMQ_RATE: Set multicast data rate.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc9
+
+#### func (*Socket) SetRcvHWM
+
+```go
+func (s *Socket) SetRcvHWM(value int) error
+```
+ZMQ_RCVHWM: Set high water mark for inbound messages.
+
+See: http://api.zeromq.org/3.2:zmq-setsockopt#toc4
+
+#### func (*Socket) SetRcvTimeout
+
+```go
+func (s *Socket) SetRcvTimeout(value time.Duration) error
+```
+ZMQ_RCVTIMEO: Maximum time before a recv operation returns with EAGAIN.
+
+See: http://api.zeromq.org/2.2:zmq-setsockopt#toc9
+
+#### func (*Socket) SetRcvbuf
+
+```go
+func (s *Socket) SetRcvbuf(value uint64) error
+```
+ZMQ_RCVBUF: Set kernel receive buffer size.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc14
+
+#### func (*Socket) SetReconnectIvl
+
+```go
+func (s *Socket) SetReconnectIvl(value time.Duration) error
+```
+ZMQ_RECONNECT_IVL: Set reconnection interval.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc16
+
+#### func (*Socket) SetReconnectIvlMax
+
+```go
+func (s *Socket) SetReconnectIvlMax(value time.Duration) error
+```
+ZMQ_RECONNECT_IVL_MAX: Set maximum reconnection interval.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc17
+
+#### func (*Socket) SetRecoveryIvl
+
+```go
+func (s *Socket) SetRecoveryIvl(value time.Duration) error
+```
+ZMQ_RECOVERY_IVL_MSEC: Set multicast recovery interval in milliseconds.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc11
+
+#### func (*Socket) SetSndHWM
+
+```go
+func (s *Socket) SetSndHWM(value int) error
+```
+ZMQ_SNDHWM: Set high water mark for outbound messages.
+
+See: http://api.zeromq.org/3.2:zmq-setsockopt#toc3
+
+#### func (*Socket) SetSndTimeout
+
+```go
+func (s *Socket) SetSndTimeout(value time.Duration) error
+```
+ZMQ_SNDTIMEO: Maximum time before a send operation returns with EAGAIN.
+
+See: http://api.zeromq.org/2.2:zmq-setsockopt#toc10
+
+#### func (*Socket) SetSndbuf
+
+```go
+func (s *Socket) SetSndbuf(value uint64) error
+```
+ZMQ_SNDBUF: Set kernel transmit buffer size.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc13
 
 #### func (*Socket) SetSockOptInt
 
@@ -561,6 +840,150 @@ func (s *Socket) SetSockOptUInt64(option UInt64SocketOption, value uint64) error
 ```
 Set a uint64 option on the socket. int zmq_setsockopt (void *s, int option,
 const void *optval, size_t optvallen);
+
+#### func (*Socket) SetSubscribe
+
+```go
+func (s *Socket) SetSubscribe(value string) error
+```
+ZMQ_SUBSCRIBE: Establish message filter.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc7
+
+#### func (*Socket) SetSwap
+
+```go
+func (s *Socket) SetSwap(value int64) error
+```
+ZMQ_SWAP: Set disk offload size.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc4
+
+#### func (*Socket) SetTCPKeepalive
+
+```go
+func (s *Socket) SetTCPKeepalive(value int) error
+```
+ZMQ_TCP_KEEPALIVE: Override SO_KEEPALIVE socket option.
+
+See: http://api.zeromq.org/3.2:zmq-setsockopt#toc25
+
+#### func (*Socket) SetTCPKeepaliveCnt
+
+```go
+func (s *Socket) SetTCPKeepaliveCnt(value int) error
+```
+ZMQ_TCP_KEEPALIVE_CNT: Override TCP_KEEPCNT socket option.
+
+See: http://api.zeromq.org/3.2:zmq-setsockopt#toc27
+
+#### func (*Socket) SetTCPKeepaliveIdle
+
+```go
+func (s *Socket) SetTCPKeepaliveIdle(value int) error
+```
+ZMQ_TCP_KEEPALIVE_IDLE: Override TCP_KEEPCNT(or TCP_KEEPALIVE on some OS).
+
+See: http://api.zeromq.org/3.2:zmq-setsockopt#toc26
+
+#### func (*Socket) SetTCPKeepaliveIntvl
+
+```go
+func (s *Socket) SetTCPKeepaliveIntvl(value int) error
+```
+ZMQ_TCP_KEEPALIVE_INTVL: Override TCP_KEEPINTVL socket option.
+
+See: http://api.zeromq.org/3.2:zmq-setsockopt#toc28
+
+#### func (*Socket) SetUnsubscribe
+
+```go
+func (s *Socket) SetUnsubscribe(value string) error
+```
+ZMQ_UNSUBSCRIBE: Remove message filter.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc8
+
+#### func (*Socket) SndHWM
+
+```go
+func (s *Socket) SndHWM() (int, error)
+```
+ZMQ_SNDHWM: Retrieves high water mark for outbound messages.
+
+See: http://api.zeromq.org/3.2:zmq-getsockopt#toc5
+
+#### func (*Socket) SndTimeout
+
+```go
+func (s *Socket) SndTimeout() (time.Duration, error)
+```
+ZMQ_SNDTIMEO: Maximum time before a socket operation returns with EAGAIN.
+
+See: http://api.zeromq.org/2.2:zmq-getsockopt#toc7
+
+#### func (*Socket) Sndbuf
+
+```go
+func (s *Socket) Sndbuf() (uint64, error)
+```
+ZMQ_SNDBUF: Retrieve kernel transmit buffer size.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc13
+
+#### func (*Socket) Swap
+
+```go
+func (s *Socket) Swap() (int64, error)
+```
+ZMQ_SWAP: Retrieve disk offload size.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc6
+
+#### func (*Socket) TCPKeepalive
+
+```go
+func (s *Socket) TCPKeepalive() (int, error)
+```
+ZMQ_TCP_KEEPALIVE: Override SO_KEEPALIVE socket option.
+
+See: http://api.zeromq.org/3.2:zmq-getsockopt#toc26
+
+#### func (*Socket) TCPKeepaliveCnt
+
+```go
+func (s *Socket) TCPKeepaliveCnt() (int, error)
+```
+ZMQ_TCP_KEEPALIVE_CNT: Override TCP_KEEPCNT socket option.
+
+See: http://api.zeromq.org/3.2:zmq-getsockopt#toc28
+
+#### func (*Socket) TCPKeepaliveIdle
+
+```go
+func (s *Socket) TCPKeepaliveIdle() (int, error)
+```
+ZMQ_TCP_KEEPALIVE_IDLE: Override TCP_KEEPCNT(or TCP_KEEPALIVE on some OS).
+
+See: http://api.zeromq.org/3.2:zmq-getsockopt#toc27
+
+#### func (*Socket) TCPKeepaliveIntvl
+
+```go
+func (s *Socket) TCPKeepaliveIntvl() (int, error)
+```
+ZMQ_TCP_KEEPALIVE_INTVL: Override TCP_KEEPINTVL socket option.
+
+See: http://api.zeromq.org/3.2:zmq-getsockopt#toc29
+
+#### func (*Socket) Type
+
+```go
+func (s *Socket) Type() (SocketType, error)
+```
+ZMQ_TYPE: Retrieve socket type.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc3
 
 #### type SocketType
 

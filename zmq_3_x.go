@@ -96,6 +96,15 @@ func (c *Context) SetMaxSockets(value int) error {
 	return c.set(C.ZMQ_MAX_SOCKETS, value)
 }
 
+func (s *Socket) SetHWM(value int) error {
+	snd := s.SetSndHWM(value)
+	rcv := s.SetRcvHWM(value)
+	if snd != nil {
+		return snd
+	}
+	return rcv
+}
+
 // Send a message to the socket.
 // int zmq_send (void *s, zmq_msg_t *msg, int flags);
 func (s *Socket) Send(data []byte, flags SendRecvOption) error {
