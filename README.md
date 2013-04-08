@@ -565,6 +565,15 @@ ZMQ_RATE: Retrieve multicast data rate.
 
 See: http://api.zeromq.org/2.1:zmq-getsockopt#toc9
 
+#### func (*Socket) RcvBuf
+
+```go
+func (s *Socket) RcvBuf() (uint64, error)
+```
+ZMQ_RCVBUF: Retrieve kernel receive buffer size.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc14
+
 #### func (*Socket) RcvHWM
 
 ```go
@@ -591,15 +600,6 @@ func (s *Socket) RcvTimeout() (time.Duration, error)
 ZMQ_RCVTIMEO: Maximum time before a socket operation returns with EAGAIN.
 
 See: http://api.zeromq.org/2.2:zmq-getsockopt#toc6
-
-#### func (*Socket) Rcvbuf
-
-```go
-func (s *Socket) Rcvbuf() (uint64, error)
-```
-ZMQ_RCVBUF: Retrieve kernel receive buffer size.
-
-See: http://api.zeromq.org/2.1:zmq-getsockopt#toc14
 
 #### func (*Socket) ReconnectIvl
 
@@ -720,6 +720,15 @@ ZMQ_RATE: Set multicast data rate.
 
 See: http://api.zeromq.org/2.1:zmq-setsockopt#toc9
 
+#### func (*Socket) SetRcvBuf
+
+```go
+func (s *Socket) SetRcvBuf(value uint64) error
+```
+ZMQ_RCVBUF: Set kernel receive buffer size.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc14
+
 #### func (*Socket) SetRcvHWM
 
 ```go
@@ -737,15 +746,6 @@ func (s *Socket) SetRcvTimeout(value time.Duration) error
 ZMQ_RCVTIMEO: Maximum time before a recv operation returns with EAGAIN.
 
 See: http://api.zeromq.org/2.2:zmq-setsockopt#toc9
-
-#### func (*Socket) SetRcvbuf
-
-```go
-func (s *Socket) SetRcvbuf(value uint64) error
-```
-ZMQ_RCVBUF: Set kernel receive buffer size.
-
-See: http://api.zeromq.org/2.1:zmq-setsockopt#toc14
 
 #### func (*Socket) SetReconnectIvl
 
@@ -774,6 +774,15 @@ ZMQ_RECOVERY_IVL_MSEC: Set multicast recovery interval in milliseconds.
 
 See: http://api.zeromq.org/2.1:zmq-setsockopt#toc11
 
+#### func (*Socket) SetSndBuf
+
+```go
+func (s *Socket) SetSndBuf(value uint64) error
+```
+ZMQ_SNDBUF: Set kernel transmit buffer size.
+
+See: http://api.zeromq.org/2.1:zmq-setsockopt#toc13
+
 #### func (*Socket) SetSndHWM
 
 ```go
@@ -791,15 +800,6 @@ func (s *Socket) SetSndTimeout(value time.Duration) error
 ZMQ_SNDTIMEO: Maximum time before a send operation returns with EAGAIN.
 
 See: http://api.zeromq.org/2.2:zmq-setsockopt#toc10
-
-#### func (*Socket) SetSndbuf
-
-```go
-func (s *Socket) SetSndbuf(value uint64) error
-```
-ZMQ_SNDBUF: Set kernel transmit buffer size.
-
-See: http://api.zeromq.org/2.1:zmq-setsockopt#toc13
 
 #### func (*Socket) SetSockOptInt
 
@@ -904,6 +904,15 @@ ZMQ_UNSUBSCRIBE: Remove message filter.
 
 See: http://api.zeromq.org/2.1:zmq-setsockopt#toc8
 
+#### func (*Socket) SndBuf
+
+```go
+func (s *Socket) SndBuf() (uint64, error)
+```
+ZMQ_SNDBUF: Retrieve kernel transmit buffer size.
+
+See: http://api.zeromq.org/2.1:zmq-getsockopt#toc13
+
 #### func (*Socket) SndHWM
 
 ```go
@@ -921,15 +930,6 @@ func (s *Socket) SndTimeout() (time.Duration, error)
 ZMQ_SNDTIMEO: Maximum time before a socket operation returns with EAGAIN.
 
 See: http://api.zeromq.org/2.2:zmq-getsockopt#toc7
-
-#### func (*Socket) Sndbuf
-
-```go
-func (s *Socket) Sndbuf() (uint64, error)
-```
-ZMQ_SNDBUF: Retrieve kernel transmit buffer size.
-
-See: http://api.zeromq.org/2.1:zmq-getsockopt#toc13
 
 #### func (*Socket) Swap
 
@@ -1019,4 +1019,4 @@ type ZmqOsSocketType C.SOCKET
 func (self ZmqOsSocketType) ToRaw() C.SOCKET
 ```
 
-*(generated from **.[godocdown](https://github.com/robertkrimen/godocdown).md** with `godocdown github.com/alecthomas/gozmq > README.md`)*
+*(generated from .[godocdown](https://github.com/robertkrimen/godocdown).md with `godocdown github.com/alecthomas/gozmq > README.md`)*
