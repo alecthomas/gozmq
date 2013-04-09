@@ -1,5 +1,7 @@
 # Go (golang) Bindings for 0mq (zmq, zeromq)
 
+[![Build Status](https://travis-ci.org/alecthomas/gozmq.png)](https://travis-ci.org/alecthomas/gozmq)
+
 This package implements [Go](http://golang.org) (golang) bindings for
 the [0mq](http://zeromq.org) C API.
 
@@ -57,7 +59,7 @@ eg. If you installed zmq into `/opt/zmq` you might try:
 If you get errors like this with 'go get' or 'go build':
 
     1: error: 'ZMQ_FOO' undeclared (first use in this function)
-    
+
 There are two possibilities:
 
 1. Your version of zmq is *very* old. In this case you will need to download and build zmq yourself.
