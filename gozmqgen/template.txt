@@ -19,7 +19,8 @@ import (
 func (s *Socket) {{.nicename}}() ({{.gotype}}, error) {
 	{{if .duration}}ms, err := s.GetSockOpt{{.ztype}}({{.shortname}})
 	return time.Duration(ms) * {{.gounit}}, err{{else}}{{if .boolean}}value, err := s.GetSockOpt{{.ztype}}({{.shortname}})
-	return value != 0, err{{else}}return {{if .cast}}{{.gotype}}({{end}}s.GetSockOpt{{.ztype}}({{.shortname}}){{if .cast}}){{end}}{{end}}{{end}}
+	return value != 0, err{{else}}{{if .cast}}value, err := s.GetSockOpt{{.ztype}}({{.shortname}})
+	return {{.gotype}}(value), err{{else}}return s.GetSockOpt{{.ztype}}({{.shortname}}){{end}}{{end}}{{end}}
 }{{end}}{{end}}
 
 // Socket Option Setters{{with .setsockopt}}{{range .options}}

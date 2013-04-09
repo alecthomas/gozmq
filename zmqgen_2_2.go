@@ -16,7 +16,8 @@ import (
 // See: http://api.zeromq.org/2.2:zmq-getsockopt#toc3
 //
 func (s *Socket) Type() (SocketType, error) {
-	return SocketType(s.GetSockOptUInt64(TYPE))
+	value, err := s.GetSockOptUInt64(TYPE)
+	return SocketType(value), err
 }
 
 // ZMQ_RCVMORE: More message parts to follow.
