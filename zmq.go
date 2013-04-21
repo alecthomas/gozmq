@@ -91,7 +91,7 @@ var (
 	// Additional ZMQ errors
 	ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
 	EFSM           error = zmqErrno(C.EFSM)
-	EINVAL         error = zmqErrno(C.EINVAL)
+	EINVAL         error = syscall.EINVAL
 	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
 	ETERM          error = zmqErrno(C.ETERM)
 	EMTHREAD       error = zmqErrno(C.EMTHREAD)
