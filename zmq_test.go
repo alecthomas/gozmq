@@ -189,7 +189,7 @@ func TestSetSockOptInt(t *testing.T) {
 		t.Errorf("Failed to set linger; %v", rc)
 	}
 	if val, rc := s.GetSockOptInt(LINGER); rc != nil {
-		t.Errorf("Failed to unsubscribe; %v", rc)
+		t.Errorf("Failed to get linger; %v", rc)
 	} else if val != linger {
 		t.Errorf("Expected %d, got %d", linger, val)
 	}
