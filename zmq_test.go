@@ -27,7 +27,7 @@ const ADDRESS1 = "tcp://127.0.0.1:23456"
 const ADDRESS2 = "tcp://127.0.0.1:23457"
 const ADDRESS3 = "tcp://127.0.0.1:23458"
 
-// Addresses for the device test. These cannot be reused since the device 
+// Addresses for the device test. These cannot be reused since the device
 // will keep running after the test terminates
 const ADDR_DEV_IN = "tcp://127.0.0.1:24111"
 const ADDR_DEV_OUT = "tcp://127.0.0.1:24112"
@@ -179,6 +179,22 @@ func TestBindToLoopBack(t *testing.T) {
 	}
 }
 
+func TestSetSockOptInt(t *testing.T) {
+	c, _ := NewContext()
+	defer c.Close()
+	s, _ := c.NewSocket(REQ)
+	defer s.Close()
+	var linger int = 42
+	if rc := s.SetSockOptInt(LINGER, linger); rc != nil {
+		t.Errorf("Failed to set linger; %v", rc)
+	}
+	if val, rc := s.GetSockOptInt(LINGER); rc != nil {
+		t.Errorf("Failed to unsubscribe; %v", rc)
+	} else if val != linger {
+		t.Errorf("Expected %d, got %d", linger, val)
+	}
+}
+
 func TestSetSockOptString(t *testing.T) {
 	c, _ := NewContext()
 	defer c.Close()
@@ -311,7 +327,7 @@ func TestMessageMemory(t *testing.T) {
 
 func doBenchmarkSendReceive(b *testing.B, size int, addr string) {
 	// since this is a benchmark it should probably call
-	// this package's api functions directly rather than 
+	// this package's api functions directly rather than
 	// using the testEnv wrappers
 	b.StopTimer()
 	data := make([]byte, size)

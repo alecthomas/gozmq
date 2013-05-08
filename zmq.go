@@ -230,7 +230,8 @@ func (s *Socket) Close() error {
 // Set an int option on the socket.
 // int zmq_setsockopt (void *s, int option, const void *optval, size_t optvallen);
 func (s *Socket) SetSockOptInt(option IntSocketOption, value int) error {
-	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); rc != 0 {
+	val := C.int(value)
+	if rc, err := C.zmq_setsockopt(s.s, C.int(option), unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); rc != 0 {
 		return casterr(err)
 	}
 	return nil
