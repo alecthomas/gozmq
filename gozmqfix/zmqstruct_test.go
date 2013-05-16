@@ -72,4 +72,19 @@ type Socket *zmq.Socket
 var S Socket = Socket(M.s)
 `,
 	},
+	{
+		Name: "zmqstruct.1",
+		In: `package main
+
+import "github.com/alecthomas/gozmq"
+
+type Socket *gozmq.Socket
+`,
+		Out: `package main
+
+import "github.com/alecthomas/gozmq"
+
+type Socket *gozmq.Socket
+`,
+	},
 }

@@ -26,7 +26,10 @@ func zmqstruct(f *ast.File) bool {
 	if spec == nil {
 		return false
 	}
-	zmq := spec.Name.Name
+	zmq := "gozmq"
+	if spec.Name != nil {
+		zmq = spec.Name.Name
+	}
 
 	fixed := false
 	walk(f, func(n interface{}) {
