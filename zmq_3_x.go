@@ -54,6 +54,30 @@ const (
 	NOBLOCK = DONTWAIT
 )
 
+// Socket transport events
+type Event int
+
+const (
+	EVENT_CONNECTED       = Event(C.ZMQ_EVENT_CONNECTED)
+	EVENT_CONNECT_DELAYED = Event(C.ZMQ_EVENT_CONNECT_DELAYED)
+	EVENT_CONNECT_RETRIED = Event(C.ZMQ_EVENT_CONNECT_RETRIED)
+
+	EVENT_LISTENING   = Event(C.ZMQ_EVENT_LISTENING)
+	EVENT_BIND_FAILED = Event(C.ZMQ_EVENT_BIND_FAILED)
+
+	EVENT_ACCEPTED      = Event(C.ZMQ_EVENT_ACCEPTED)
+	EVENT_ACCEPT_FAILED = Event(C.ZMQ_EVENT_ACCEPT_FAILED)
+
+	EVENT_CLOSED       = Event(C.ZMQ_EVENT_CLOSED)
+	EVENT_CLOSE_FAILED = Event(C.ZMQ_EVENT_CLOSE_FAILED)
+	EVENT_DISCONNECTED = Event(C.ZMQ_EVENT_DISCONNECTED)
+
+	EVENT_ALL = EVENT_CONNECTED | EVENT_CONNECT_DELAYED |
+		EVENT_CONNECT_RETRIED | EVENT_LISTENING | EVENT_BIND_FAILED |
+		EVENT_ACCEPTED | EVENT_ACCEPT_FAILED | EVENT_CLOSED |
+		EVENT_CLOSE_FAILED | EVENT_DISCONNECTED
+)
+
 // Get a context option.
 // int zmq_ctx_get (void *c, int);
 func (c *Context) get(option C.int) (int, error) {
@@ -156,6 +180,19 @@ func (s *Socket) Recv(flags SendRecvOption) (data []byte, err error) {
 		data = nil
 	}
 	return
+}
+
+// Register a monitoring callback endpoint.
+// int zmq_socket_monitor (void *s, const char *addr, int events);
+func (s *Socket) Monitor(address string, events Event) error {
+	a := C.CString(address)
+	defer C.free(unsafe.Pointer(a))
+
+	rc, err := C.zmq_socket_monitor(s.apiSocket(), a, C.int(events))
+	if rc == -1 {
+		return casterr(err)
+	}
+	return nil
 }
 
 // Portability helper
