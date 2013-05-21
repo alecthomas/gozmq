@@ -200,4 +200,6 @@ func waitForEvent(t *testing.T, monitor *Socket) error {
 	case <-timeout:
 		return errors.New("Test timed out")
 	}
+
+	return nil
 }
