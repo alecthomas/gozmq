@@ -18,6 +18,7 @@
 package gozmq
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -123,4 +124,82 @@ func TestSocket_SetSockOptStringNil(t *testing.T) {
 	case <-failed:
 	case <-time.After(50 * time.Millisecond):
 	}
+}
+
+const (
+	TESTMONITOR_ADDR_SINK   = "tcp://127.0.0.1:24117"
+	TESTMONITOR_ADDR_EVENTS = "inproc://TestMonitorEvents"
+)
+
+func TestMonitor(t *testing.T) {
+	te := NewTestEnv(t)
+	defer te.Close()
+
+	// Prepare the sink socket.
+	out := te.NewSocket(PULL)
+	err := out.Bind(TESTMONITOR_ADDR_SINK)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Prepare the source socket, do not connect yet.
+	in := te.NewSocket(PUSH)
+	defer in.Close()
+
+	// Attach the monitor.
+	err = in.Monitor(TESTMONITOR_ADDR_EVENTS,
+		EVENT_CONNECTED|EVENT_DISCONNECTED)
+	if err != nil {
+		out.Close()
+		t.Fatal(err)
+	}
+
+	monitor := te.NewConnectedSocket(PAIR, TESTMONITOR_ADDR_EVENTS)
+
+	// Connect the client to the server, wait for EVENT_CONNECTED.
+	err = in.Connect(TESTMONITOR_ADDR_SINK)
+	if err != nil {
+		out.Close()
+		t.Fatal(err)
+	}
+
+	err = waitForEvent(t, monitor)
+	if err != nil {
+		out.Close()
+		t.Fatal(err)
+	}
+
+	// Close the sink socket, wait for EVENT_DISCONNECTED.
+	err = out.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = waitForEvent(t, monitor)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func waitForEvent(t *testing.T, monitor *Socket) error {
+	exit := make(chan error, 1)
+
+	// This goroutine will return either when an event is received
+	// or the context is closed.
+	go func() {
+		// RecvMultipart should work for both zeromq3-x and libzmq API.
+		_, ex := monitor.RecvMultipart(0)
+		exit <- ex
+	}()
+
+	timeout := time.After(time.Second)
+
+	select {
+	case err := <-exit:
+		return err
+	case <-timeout:
+		return errors.New("Test timed out")
+	}
+
+	return nil
 }

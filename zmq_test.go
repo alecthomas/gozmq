@@ -422,7 +422,6 @@ func (te *testEnv) pushSocket(s *Socket) {
 }
 
 func (te *testEnv) Close() {
-
 	if err := recover(); err != nil {
 		te.t.Errorf("failed in testEnv: %v", err)
 	}
