@@ -142,7 +142,7 @@ func (s *Socket) Send(data []byte, flags SendRecvOption) error {
 
 	if size > 0 {
 		// FIXME Ideally this wouldn't require a copy.
-		C.memcpy(unsafe.Pointer(C.zmq_msg_data(&m)), unsafe.Pointer(&data[0]), size) // XXX I hope this works...(seems to)
+		C.memcpy(C.zmq_msg_data(&m), unsafe.Pointer(&data[0]), size) // XXX I hope this works...(seems to)
 	}
 
 	if rc, err := C.zmq_sendmsg(s.s, &m, C.int(flags)); rc == -1 {
@@ -174,8 +174,7 @@ func (s *Socket) Recv(flags SendRecvOption) (data []byte, err error) {
 	// FIXME Ideally this wouldn't require a copy.
 	size := C.zmq_msg_size(&m)
 	if size > 0 {
-		data = make([]byte, int(size))
-		C.memcpy(unsafe.Pointer(&data[0]), C.zmq_msg_data(&m), size)
+		data = C.GoBytes(C.zmq_msg_data(&m), C.int(size))
 	} else {
 		data = nil
 	}
