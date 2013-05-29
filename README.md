@@ -59,7 +59,7 @@ eg. If you installed zmq into `/opt/zmq` you might try:
 If you get errors like this with 'go get' or 'go build':
 
     1: error: 'ZMQ_FOO' undeclared (first use in this function)
-
+    
 There are two possibilities:
 
 1. Your version of zmq is *very* old. In this case you will need to download and build zmq yourself.
