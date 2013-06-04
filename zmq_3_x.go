@@ -44,6 +44,7 @@ const (
 	TCP_KEEPALIVE_IDLE  = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_IDLE)
 	TCP_KEEPALIVE_INTVL = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_INTVL)
 	TCP_ACCEPT_FILTER   = StringSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
+	XPUB_VERBOSE        = IntSocketOption(C.ZMQ_XPUB_VERBOSE)
 
 	// Message options
 	MORE = MessageOption(C.ZMQ_MORE)

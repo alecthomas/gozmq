@@ -328,6 +328,17 @@ func (s *Socket) SetROUTERMandatory(value bool) error {
 	return s.SetSockOptInt(ROUTER_MANDATORY, 0)
 }
 
+// ZMQ_XPUB_VERBOSE: provide all subscription messages on XPUB sockets.
+//
+// See: http://api.zeromq.org/3.2:zmq-setsockopt#toc24
+//
+func (s *Socket) SetXPUBVerbose(value bool) error {
+	if value {
+		return s.SetSockOptInt(XPUB_VERBOSE, 1)
+	}
+	return s.SetSockOptInt(XPUB_VERBOSE, 0)
+}
+
 // ZMQ_TCP_KEEPALIVE: Override SO_KEEPALIVE socket option.
 //
 // See: http://api.zeromq.org/3.2:zmq-setsockopt#toc25

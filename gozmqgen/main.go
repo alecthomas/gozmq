@@ -177,7 +177,6 @@ var (
 			"LAST_ENDPOINT":           true,
 			"MAXMSGSIZE":              true,
 			"MULTICAST_HOPS":          true,
-			"XPUB_VERBOSE":            true,
 		},
 		"2.1": map[string]bool{
 			"RECOVERY_IVL": true,
