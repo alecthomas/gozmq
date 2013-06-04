@@ -176,7 +176,6 @@ var (
 			"MAXMSGSIZE":              true,
 			"MULTICAST_HOPS":          true,
 			"ROUTER_MANDATORY":        true,
-			"TCP_ACCEPT_FILTER":       true,
 			"XPUB_VERBOSE":            true,
 		},
 		"2.1": map[string]bool{

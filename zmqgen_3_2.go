@@ -348,3 +348,11 @@ func (s *Socket) SetTCPKeepaliveCnt(value int) error {
 func (s *Socket) SetTCPKeepaliveIntvl(value int) error {
 	return s.SetSockOptInt(TCP_KEEPALIVE_INTVL, value)
 }
+
+// ZMQ_TCP_ACCEPT_FILTER: Assign filters to allow new TCP connections.
+//
+// See: http://api.zeromq.org/3.2:zmq-setsockopt#toc29
+//
+func (s *Socket) SetTCPAcceptFilter(value string) error {
+	return s.SetSockOptString(TCP_ACCEPT_FILTER, value)
+}
