@@ -164,18 +164,18 @@ var (
 
 	// shortname : unit
 	fixedunits = map[string]string{
-		"XPUB_VERBOSE":     "boolean",
-		"ROUTER_MANDATORY": "boolean",
+		"DELAY_ATTACH_ON_CONNECT": "boolean",
+		"ROUTER_MANDATORY":        "boolean",
+		"XPUB_VERBOSE":            "boolean",
 	}
 
 	// version : shortname
 	ignore = map[string]map[string]bool{
 		"": map[string]bool{
-			"DELAY_ATTACH_ON_CONNECT": true,
-			"FD":                      true,
-			"IPV4ONLY":                true,
-			"LAST_ENDPOINT":           true,
-			"MULTICAST_HOPS":          true,
+			"FD":             true,
+			"IPV4ONLY":       true,
+			"LAST_ENDPOINT":  true,
+			"MULTICAST_HOPS": true,
 		},
 		"2.1": map[string]bool{
 			"RECOVERY_IVL": true,

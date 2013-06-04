@@ -155,6 +155,15 @@ func (s *Socket) SndTimeout() (time.Duration, error) {
 	return time.Duration(ms) * time.Millisecond, err
 }
 
+// ZMQ_DELAY_ATTACH_ON_CONNECT: Retrieve attach-on-connect value.
+//
+// See: http://api.zeromq.org/3.2:zmq-getsockopt#toc22
+//
+func (s *Socket) DelayAttachOnConnect() (bool, error) {
+	value, err := s.GetSockOptInt(DELAY_ATTACH_ON_CONNECT)
+	return value != 0, err
+}
+
 // ZMQ_EVENTS: Retrieve socket event state.
 //
 // See: http://api.zeromq.org/3.2:zmq-getsockopt#toc24
@@ -331,6 +340,17 @@ func (s *Socket) SetRcvTimeout(value time.Duration) error {
 //
 func (s *Socket) SetSndTimeout(value time.Duration) error {
 	return s.SetSockOptInt(SNDTIMEO, int(value/time.Millisecond))
+}
+
+// ZMQ_DELAY_ATTACH_ON_CONNECT: Accept messages only when connections are made.
+//
+// See: http://api.zeromq.org/3.2:zmq-setsockopt#toc22
+//
+func (s *Socket) SetDelayAttachOnConnect(value bool) error {
+	if value {
+		return s.SetSockOptInt(DELAY_ATTACH_ON_CONNECT, 1)
+	}
+	return s.SetSockOptInt(DELAY_ATTACH_ON_CONNECT, 0)
 }
 
 // ZMQ_ROUTER_MANDATORY: accept only routable messages on ROUTER sockets.
