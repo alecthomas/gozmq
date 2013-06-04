@@ -175,7 +175,6 @@ var (
 			"FD":                      true,
 			"IPV4ONLY":                true,
 			"LAST_ENDPOINT":           true,
-			"MAXMSGSIZE":              true,
 			"MULTICAST_HOPS":          true,
 		},
 		"2.1": map[string]bool{

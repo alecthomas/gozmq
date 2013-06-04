@@ -38,6 +38,7 @@ const (
 	// TODO Not documented in the man page...
 	//LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
 	FAIL_UNROUTABLE     = BoolSocketOption(C.ZMQ_FAIL_UNROUTABLE)
+	MAXMSGSIZE          = Int64SocketOption(C.ZMQ_MAXMSGSIZE)
 	ROUTER_MANDATORY    = IntSocketOption(C.ZMQ_ROUTER_MANDATORY)
 	TCP_KEEPALIVE       = IntSocketOption(C.ZMQ_TCP_KEEPALIVE)
 	TCP_KEEPALIVE_CNT   = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_CNT)

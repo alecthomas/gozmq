@@ -129,6 +129,14 @@ func (s *Socket) Backlog() (int, error) {
 	return s.GetSockOptInt(BACKLOG)
 }
 
+// ZMQ_MAXMSGSIZE: Maximum acceptable inbound message size.
+//
+// See: http://api.zeromq.org/3.2:zmq-getsockopt#toc17
+//
+func (s *Socket) MaxMsgSize() (int64, error) {
+	return s.GetSockOptInt64(MAXMSGSIZE)
+}
+
 // ZMQ_RCVTIMEO: Maximum time before a socket operation returns with EAGAIN.
 //
 // See: http://api.zeromq.org/3.2:zmq-getsockopt#toc19
@@ -299,6 +307,14 @@ func (s *Socket) SetReconnectIvlMax(value time.Duration) error {
 //
 func (s *Socket) SetBacklog(value int) error {
 	return s.SetSockOptInt(BACKLOG, value)
+}
+
+// ZMQ_MAXMSGSIZE: Maximum acceptable inbound message size.
+//
+// See: http://api.zeromq.org/3.2:zmq-setsockopt#toc17
+//
+func (s *Socket) SetMaxMsgSize(value int64) error {
+	return s.SetSockOptInt64(MAXMSGSIZE, value)
 }
 
 // ZMQ_RCVTIMEO: Maximum time before a recv operation returns with EAGAIN.
