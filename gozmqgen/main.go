@@ -131,6 +131,7 @@ var (
 		"more":     "More",
 		"msg":      "Msg",
 		"pub":      "PUB",
+		"Router":   "ROUTER",
 		"size":     "Size",
 		"Tcp":      "TCP",
 		"timeo":    "Timeout",
@@ -163,7 +164,8 @@ var (
 
 	// shortname : unit
 	fixedunits = map[string]string{
-		"XPUB_VERBOSE": "boolean",
+		"XPUB_VERBOSE":     "boolean",
+		"ROUTER_MANDATORY": "boolean",
 	}
 
 	// version : shortname
@@ -175,7 +177,6 @@ var (
 			"LAST_ENDPOINT":           true,
 			"MAXMSGSIZE":              true,
 			"MULTICAST_HOPS":          true,
-			"ROUTER_MANDATORY":        true,
 			"XPUB_VERBOSE":            true,
 		},
 		"2.1": map[string]bool{
@@ -373,6 +374,9 @@ func (b *OptionsBuilder) SetProperty(name string, value string) {
 				option.lowtype = val
 			} else {
 				option.lowtype = option.typ
+			}
+			if val, ok := fixedunits[option.shortname]; ok {
+				option.unit = val
 			}
 			gomap := gotypes[option.typ]
 			if val, ok := gomap[option.unit]; ok {

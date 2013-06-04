@@ -317,6 +317,17 @@ func (s *Socket) SetSndTimeout(value time.Duration) error {
 	return s.SetSockOptInt(SNDTIMEO, int(value/time.Millisecond))
 }
 
+// ZMQ_ROUTER_MANDATORY: accept only routable messages on ROUTER sockets.
+//
+// See: http://api.zeromq.org/3.2:zmq-setsockopt#toc23
+//
+func (s *Socket) SetROUTERMandatory(value bool) error {
+	if value {
+		return s.SetSockOptInt(ROUTER_MANDATORY, 1)
+	}
+	return s.SetSockOptInt(ROUTER_MANDATORY, 0)
+}
+
 // ZMQ_TCP_KEEPALIVE: Override SO_KEEPALIVE socket option.
 //
 // See: http://api.zeromq.org/3.2:zmq-setsockopt#toc25
