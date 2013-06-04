@@ -39,6 +39,7 @@ const (
 	//LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
 	DELAY_ATTACH_ON_CONNECT = IntSocketOption(C.ZMQ_DELAY_ATTACH_ON_CONNECT)
 	FAIL_UNROUTABLE         = BoolSocketOption(C.ZMQ_FAIL_UNROUTABLE)
+	IPV4ONLY                = IntSocketOption(C.ZMQ_IPV4ONLY)
 	MAXMSGSIZE              = Int64SocketOption(C.ZMQ_MAXMSGSIZE)
 	ROUTER_MANDATORY        = IntSocketOption(C.ZMQ_ROUTER_MANDATORY)
 	TCP_KEEPALIVE           = IntSocketOption(C.ZMQ_TCP_KEEPALIVE)

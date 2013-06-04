@@ -155,6 +155,15 @@ func (s *Socket) SndTimeout() (time.Duration, error) {
 	return time.Duration(ms) * time.Millisecond, err
 }
 
+// ZMQ_IPV4ONLY: Retrieve IPv4-only socket override status.
+//
+// See: http://api.zeromq.org/3.2:zmq-getsockopt#toc21
+//
+func (s *Socket) IPv4Only() (bool, error) {
+	value, err := s.GetSockOptInt(IPV4ONLY)
+	return value != 0, err
+}
+
 // ZMQ_DELAY_ATTACH_ON_CONNECT: Retrieve attach-on-connect value.
 //
 // See: http://api.zeromq.org/3.2:zmq-getsockopt#toc22
@@ -340,6 +349,17 @@ func (s *Socket) SetRcvTimeout(value time.Duration) error {
 //
 func (s *Socket) SetSndTimeout(value time.Duration) error {
 	return s.SetSockOptInt(SNDTIMEO, int(value/time.Millisecond))
+}
+
+// ZMQ_IPV4ONLY: Use IPv4-only sockets.
+//
+// See: http://api.zeromq.org/3.2:zmq-setsockopt#toc21
+//
+func (s *Socket) SetIPv4Only(value bool) error {
+	if value {
+		return s.SetSockOptInt(IPV4ONLY, 1)
+	}
+	return s.SetSockOptInt(IPV4ONLY, 0)
 }
 
 // ZMQ_DELAY_ATTACH_ON_CONNECT: Accept messages only when connections are made.

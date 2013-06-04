@@ -127,7 +127,7 @@ var (
 		"buf":      "Buf",
 		"Hwm":      "HWM",
 		"hwm":      "HWM",
-		"Ipv4only": "IPV4Only",
+		"Ipv4only": "IPv4Only",
 		"more":     "More",
 		"msg":      "Msg",
 		"pub":      "PUB",
@@ -173,7 +173,6 @@ var (
 	ignore = map[string]map[string]bool{
 		"": map[string]bool{
 			"FD":             true,
-			"IPV4ONLY":       true,
 			"LAST_ENDPOINT":  true,
 			"MULTICAST_HOPS": true,
 		},
