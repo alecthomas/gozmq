@@ -134,6 +134,10 @@ func (s *Socket) SetHWM(value int) error {
 	return rcv
 }
 
+func (s *Socket) SetTCPAcceptFilterNil() error {
+	return s.SetSockOptStringNil(TCP_ACCEPT_FILTER)
+}
+
 // Disconnect the socket from the address.
 // int zmq_disconnect (void *s, const char *addr);
 func (s *Socket) Disconnect(address string) error {
