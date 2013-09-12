@@ -129,6 +129,20 @@ func (s *Socket) SetHWM(value int) error {
 	return rcv
 }
 
+// Disconnect the socket from the address.
+// int zmq_disconnect (void *s, const char *addr);
+func (s *Socket) Disconnect(address string) error {
+	if s.c == nil {
+		return ENOTSOCK
+	}
+	a := C.CString(address)
+	defer C.free(unsafe.Pointer(a))
+	if rc, err := C.zmq_disconnect(s.s, a); rc != 0 {
+		return casterr(err)
+	}
+	return nil
+}
+
 // Send a message to the socket.
 // int zmq_send (void *s, zmq_msg_t *msg, int flags);
 func (s *Socket) Send(data []byte, flags SendRecvOption) error {
