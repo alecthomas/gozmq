@@ -37,12 +37,17 @@ const (
 
 	// TODO Not documented in the man page...
 	//LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
-	FAIL_UNROUTABLE     = BoolSocketOption(C.ZMQ_FAIL_UNROUTABLE)
-	TCP_KEEPALIVE       = IntSocketOption(C.ZMQ_TCP_KEEPALIVE)
-	TCP_KEEPALIVE_CNT   = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_CNT)
-	TCP_KEEPALIVE_IDLE  = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_IDLE)
-	TCP_KEEPALIVE_INTVL = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_INTVL)
-	TCP_ACCEPT_FILTER   = StringSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
+	DELAY_ATTACH_ON_CONNECT = IntSocketOption(C.ZMQ_DELAY_ATTACH_ON_CONNECT)
+	FAIL_UNROUTABLE         = BoolSocketOption(C.ZMQ_FAIL_UNROUTABLE)
+	IPV4ONLY                = IntSocketOption(C.ZMQ_IPV4ONLY)
+	MAXMSGSIZE              = Int64SocketOption(C.ZMQ_MAXMSGSIZE)
+	ROUTER_MANDATORY        = IntSocketOption(C.ZMQ_ROUTER_MANDATORY)
+	TCP_KEEPALIVE           = IntSocketOption(C.ZMQ_TCP_KEEPALIVE)
+	TCP_KEEPALIVE_CNT       = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_CNT)
+	TCP_KEEPALIVE_IDLE      = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_IDLE)
+	TCP_KEEPALIVE_INTVL     = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_INTVL)
+	TCP_ACCEPT_FILTER       = StringSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
+	XPUB_VERBOSE            = IntSocketOption(C.ZMQ_XPUB_VERBOSE)
 
 	// Message options
 	MORE = MessageOption(C.ZMQ_MORE)
@@ -127,6 +132,10 @@ func (s *Socket) SetHWM(value int) error {
 		return snd
 	}
 	return rcv
+}
+
+func (s *Socket) SetTCPAcceptFilterNil() error {
+	return s.SetSockOptStringNil(TCP_ACCEPT_FILTER)
 }
 
 // Disconnect the socket from the address.

@@ -127,10 +127,11 @@ var (
 		"buf":      "Buf",
 		"Hwm":      "HWM",
 		"hwm":      "HWM",
-		"Ipv4only": "IPV4Only",
+		"Ipv4only": "IPv4Only",
 		"more":     "More",
 		"msg":      "Msg",
 		"pub":      "PUB",
+		"Router":   "ROUTER",
 		"size":     "Size",
 		"Tcp":      "TCP",
 		"timeo":    "Timeout",
@@ -163,21 +164,17 @@ var (
 
 	// shortname : unit
 	fixedunits = map[string]string{
-		"XPUB_VERBOSE": "boolean",
+		"DELAY_ATTACH_ON_CONNECT": "boolean",
+		"ROUTER_MANDATORY":        "boolean",
+		"XPUB_VERBOSE":            "boolean",
 	}
 
 	// version : shortname
 	ignore = map[string]map[string]bool{
 		"": map[string]bool{
-			"DELAY_ATTACH_ON_CONNECT": true,
-			"FD":                      true,
-			"IPV4ONLY":                true,
-			"LAST_ENDPOINT":           true,
-			"MAXMSGSIZE":              true,
-			"MULTICAST_HOPS":          true,
-			"ROUTER_MANDATORY":        true,
-			"TCP_ACCEPT_FILTER":       true,
-			"XPUB_VERBOSE":            true,
+			"FD":             true,
+			"LAST_ENDPOINT":  true,
+			"MULTICAST_HOPS": true,
 		},
 		"2.1": map[string]bool{
 			"RECOVERY_IVL": true,
@@ -374,6 +371,9 @@ func (b *OptionsBuilder) SetProperty(name string, value string) {
 				option.lowtype = val
 			} else {
 				option.lowtype = option.typ
+			}
+			if val, ok := fixedunits[option.shortname]; ok {
+				option.unit = val
 			}
 			gomap := gotypes[option.typ]
 			if val, ok := gomap[option.unit]; ok {
