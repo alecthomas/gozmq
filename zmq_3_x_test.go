@@ -1,4 +1,4 @@
-// +build zmq_3_x
+// +build zmq_3_x zmq_4_x
 
 /*
   Copyright 2010 Alec Thomas

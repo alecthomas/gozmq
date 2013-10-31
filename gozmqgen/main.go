@@ -22,7 +22,7 @@ type Args struct {
 }
 
 var args = Args{
-	zversion:      "2.1,2.2,3.2",
+	zversion:      "2.1,2.2,3.2,4.0",
 	pages:         "getsockopt,setsockopt",
 	comment_width: 72,
 	templsource:   "./gozmqgen/template.txt",
@@ -86,20 +86,34 @@ func main() {
 
 var (
 	gotypes = map[string]map[string]string{
-		"binary data":      map[string]string{"": "string"},
-		"character string": map[string]string{"": "string"},
+		"binary data": map[string]string{
+			"": "string",
+		},
+		"binary data or Z85 text string": map[string]string{
+			"": "string",
+		},
+		"character string": map[string]string{
+			"": "string",
+		},
 		"int": map[string]string{
 			"":             "int",
 			"boolean":      "bool",
 			"milliseconds": "time.Duration",
 		},
-		"int on POSIX systems, SOCKET on Windows": map[string]string{"": "int"},
+		"int on POSIX systems, SOCKET on Windows": map[string]string{
+			"": "int",
+		},
 		"int64_t": map[string]string{
 			"":             "int64",
 			"boolean":      "bool",
 			"milliseconds": "time.Duration",
 		},
-		"uint32_t": map[string]string{"": "uint32"},
+		"NULL-terminated character string": map[string]string{
+			"": "string",
+		},
+		"uint32_t": map[string]string{
+			"": "uint32",
+		},
 		"uint64_t": map[string]string{
 			"":        "uint64",
 			"boolean": "bool",
@@ -107,13 +121,15 @@ var (
 	}
 
 	ztypes = map[string]map[string]string{
-		"binary data":      map[string]string{"": "String"},
-		"character string": map[string]string{"": "String"},
-		"int":              map[string]string{"": "Int"},
+		"binary data":                    map[string]string{"": "String"},
+		"binary data or Z85 text string": map[string]string{"": "String"},
+		"character string":               map[string]string{"": "String"},
+		"int":                            map[string]string{"": "Int"},
 		"int on POSIX systems, SOCKET on Windows": map[string]string{"": "Int"},
-		"int64_t":                                 map[string]string{"": "Int64"},
-		"uint32_t":                                map[string]string{"": "UInt32"},
-		"uint64_t":                                map[string]string{"": "UInt64"},
+		"int64_t":                          map[string]string{"": "Int64"},
+		"NULL-terminated character string": map[string]string{"": "String"},
+		"uint32_t":                         map[string]string{"": "UInt32"},
+		"uint64_t":                         map[string]string{"": "UInt64"},
 	}
 
 	lowtypes = map[string]string{
@@ -192,8 +208,9 @@ var (
 
 	buildtags = map[string]string{
 		"2.1": "zmq_2_1",
-		"2.2": "!zmq_2_1,!zmq_3_x",
+		"2.2": "!zmq_2_1,!zmq_3_x,!zmq_4_x",
 		"3.2": "zmq_3_x",
+		"4.0": "zmq_4_x",
 	}
 )
 
@@ -359,6 +376,9 @@ func (b *OptionsBuilder) SetProperty(name string, value string) {
 			break
 		case "Option value unit":
 			option.unit = value
+			break
+		case "Option value size":
+			option.unit = "Z85"
 			break
 		}
 		if len(option.typ) > 0 && len(option.unit) > 0 {
