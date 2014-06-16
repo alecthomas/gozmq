@@ -23,25 +23,23 @@ GoZMQ has made some public changes that will break old code.  Fortunately, we've
 
 ## Installing
 
-GoZMQ currently supports ZMQ 2.1.x, 2.2.x and *basic* support for 3.x. Following are instructions on how to compile against these versions.
+GoZMQ currently supports ZMQ 2.1.x, 2.2.x, 3.x and 4.x. Following are instructions on how to compile against these versions.
 
-Install gozmq with:
+For ZeroMQ 2.2.x install with:
 
     go get github.com/alecthomas/gozmq
 
-This implementation works currently against:: ZeroMQ 2.2.x
-
-### ZeroMQ 2.1.x
-
-If you're using ZeroMQ 2.1.x, install with:
+For 2.1.x install with:
 
     go get -tags zmq_2_1 github.com/alecthomas/gozmq
 
-### ZeroMQ 3.x
-
-There is *basic* support for ZeroMQ 3.x. Install with:
+For 3.x install with:
 
     go get -tags zmq_3_x github.com/alecthomas/gozmq
+    
+For 4.x install with:
+
+    go get -tags zmq_4_x github.com/alecthomas/gozmq
 
 ### Troubleshooting
 
