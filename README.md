@@ -1,4 +1,6 @@
-# Go (golang) Bindings for 0mq (zmq, zeromq)
+# _NOTE:_ These gozmq bindings are in maintenance mode. Only critical bugs will be fixed. Henceforth I would suggest using [@pebbe's](https://github.com/pebbe) actively maintained bindings for [zmq2](https://github.com/pebbe/zmq2), [zmq3](https://github.com/pebbe/zmq3) and [zmq4](https://github.com/pebbe/zmq4).
+
+## Go (golang) Bindings for 0mq (zmq, zeromq)
 
 [![Build Status](https://travis-ci.org/alecthomas/gozmq.png)](https://travis-ci.org/alecthomas/gozmq)
 
@@ -49,15 +51,15 @@ If the go tool can't find zmq and you know it is installed, you may need to over
 
 eg. If you installed zmq into `/opt/zmq` you might try:
 
-	CGO_CFLAGS=-I/opt/zmq/include CGO_LDFLAGS=-L/opt/zmq/lib \
-		go get github.com/alecthomas/gozmq
+  CGO_CFLAGS=-I/opt/zmq/include CGO_LDFLAGS=-L/opt/zmq/lib \
+    go get github.com/alecthomas/gozmq
 
 #### Mismatch in version of ZMQ
 
 If you get errors like this with 'go get' or 'go build':
 
     1: error: 'ZMQ_FOO' undeclared (first use in this function)
-    
+
 There are two possibilities:
 
 1. Your version of zmq is *very* old. In this case you will need to download and build zmq yourself.
@@ -153,119 +155,119 @@ following (educated) assumptions:
 
 ```go
 const (
-	// NewSocket types
-	PAIR   = SocketType(C.ZMQ_PAIR)
-	PUB    = SocketType(C.ZMQ_PUB)
-	SUB    = SocketType(C.ZMQ_SUB)
-	REQ    = SocketType(C.ZMQ_REQ)
-	REP    = SocketType(C.ZMQ_REP)
-	DEALER = SocketType(C.ZMQ_DEALER)
-	ROUTER = SocketType(C.ZMQ_ROUTER)
-	PULL   = SocketType(C.ZMQ_PULL)
-	PUSH   = SocketType(C.ZMQ_PUSH)
-	XPUB   = SocketType(C.ZMQ_XPUB)
-	XSUB   = SocketType(C.ZMQ_XSUB)
+  // NewSocket types
+  PAIR   = SocketType(C.ZMQ_PAIR)
+  PUB    = SocketType(C.ZMQ_PUB)
+  SUB    = SocketType(C.ZMQ_SUB)
+  REQ    = SocketType(C.ZMQ_REQ)
+  REP    = SocketType(C.ZMQ_REP)
+  DEALER = SocketType(C.ZMQ_DEALER)
+  ROUTER = SocketType(C.ZMQ_ROUTER)
+  PULL   = SocketType(C.ZMQ_PULL)
+  PUSH   = SocketType(C.ZMQ_PUSH)
+  XPUB   = SocketType(C.ZMQ_XPUB)
+  XSUB   = SocketType(C.ZMQ_XSUB)
 
-	// Deprecated aliases
-	XREQ       = DEALER
-	XREP       = ROUTER
-	UPSTREAM   = PULL
-	DOWNSTREAM = PUSH
+  // Deprecated aliases
+  XREQ       = DEALER
+  XREP       = ROUTER
+  UPSTREAM   = PULL
+  DOWNSTREAM = PUSH
 
-	// NewSocket options
-	AFFINITY          = UInt64SocketOption(C.ZMQ_AFFINITY)
-	IDENTITY          = StringSocketOption(C.ZMQ_IDENTITY)
-	SUBSCRIBE         = StringSocketOption(C.ZMQ_SUBSCRIBE)
-	UNSUBSCRIBE       = StringSocketOption(C.ZMQ_UNSUBSCRIBE)
-	RATE              = Int64SocketOption(C.ZMQ_RATE)
-	RECOVERY_IVL      = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
-	SNDBUF            = UInt64SocketOption(C.ZMQ_SNDBUF)
-	RCVBUF            = UInt64SocketOption(C.ZMQ_RCVBUF)
-	FD                = Int64SocketOption(C.ZMQ_FD)
-	EVENTS            = UInt64SocketOption(C.ZMQ_EVENTS)
-	TYPE              = UInt64SocketOption(C.ZMQ_TYPE)
-	LINGER            = IntSocketOption(C.ZMQ_LINGER)
-	RECONNECT_IVL     = IntSocketOption(C.ZMQ_RECONNECT_IVL)
-	RECONNECT_IVL_MAX = IntSocketOption(C.ZMQ_RECONNECT_IVL_MAX)
-	BACKLOG           = IntSocketOption(C.ZMQ_BACKLOG)
+  // NewSocket options
+  AFFINITY          = UInt64SocketOption(C.ZMQ_AFFINITY)
+  IDENTITY          = StringSocketOption(C.ZMQ_IDENTITY)
+  SUBSCRIBE         = StringSocketOption(C.ZMQ_SUBSCRIBE)
+  UNSUBSCRIBE       = StringSocketOption(C.ZMQ_UNSUBSCRIBE)
+  RATE              = Int64SocketOption(C.ZMQ_RATE)
+  RECOVERY_IVL      = Int64SocketOption(C.ZMQ_RECOVERY_IVL)
+  SNDBUF            = UInt64SocketOption(C.ZMQ_SNDBUF)
+  RCVBUF            = UInt64SocketOption(C.ZMQ_RCVBUF)
+  FD                = Int64SocketOption(C.ZMQ_FD)
+  EVENTS            = UInt64SocketOption(C.ZMQ_EVENTS)
+  TYPE              = UInt64SocketOption(C.ZMQ_TYPE)
+  LINGER            = IntSocketOption(C.ZMQ_LINGER)
+  RECONNECT_IVL     = IntSocketOption(C.ZMQ_RECONNECT_IVL)
+  RECONNECT_IVL_MAX = IntSocketOption(C.ZMQ_RECONNECT_IVL_MAX)
+  BACKLOG           = IntSocketOption(C.ZMQ_BACKLOG)
 
-	// Send/recv options
-	SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
+  // Send/recv options
+  SNDMORE = SendRecvOption(C.ZMQ_SNDMORE)
 )
 ```
 
 ```go
 const (
-	POLLIN  = PollEvents(C.ZMQ_POLLIN)
-	POLLOUT = PollEvents(C.ZMQ_POLLOUT)
-	POLLERR = PollEvents(C.ZMQ_POLLERR)
+  POLLIN  = PollEvents(C.ZMQ_POLLIN)
+  POLLOUT = PollEvents(C.ZMQ_POLLOUT)
+  POLLERR = PollEvents(C.ZMQ_POLLERR)
 )
 ```
 
 ```go
 const (
-	STREAMER  = DeviceType(C.ZMQ_STREAMER)
-	FORWARDER = DeviceType(C.ZMQ_FORWARDER)
-	QUEUE     = DeviceType(C.ZMQ_QUEUE)
+  STREAMER  = DeviceType(C.ZMQ_STREAMER)
+  FORWARDER = DeviceType(C.ZMQ_FORWARDER)
+  QUEUE     = DeviceType(C.ZMQ_QUEUE)
 )
 ```
 
 ```go
 const (
-	RCVTIMEO = IntSocketOption(C.ZMQ_RCVTIMEO)
-	SNDTIMEO = IntSocketOption(C.ZMQ_SNDTIMEO)
+  RCVTIMEO = IntSocketOption(C.ZMQ_RCVTIMEO)
+  SNDTIMEO = IntSocketOption(C.ZMQ_SNDTIMEO)
 )
 ```
 
 ```go
 const (
-	RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
-	RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
-	SWAP              = Int64SocketOption(C.ZMQ_SWAP)
-	MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)
-	HWM               = UInt64SocketOption(C.ZMQ_HWM)
-	NOBLOCK           = SendRecvOption(C.ZMQ_NOBLOCK)
+  RCVMORE           = UInt64SocketOption(C.ZMQ_RCVMORE)
+  RECOVERY_IVL_MSEC = Int64SocketOption(C.ZMQ_RECOVERY_IVL_MSEC)
+  SWAP              = Int64SocketOption(C.ZMQ_SWAP)
+  MCAST_LOOP        = Int64SocketOption(C.ZMQ_MCAST_LOOP)
+  HWM               = UInt64SocketOption(C.ZMQ_HWM)
+  NOBLOCK           = SendRecvOption(C.ZMQ_NOBLOCK)
 
-	// Forwards-compatible aliases:
-	DONTWAIT = NOBLOCK
+  // Forwards-compatible aliases:
+  DONTWAIT = NOBLOCK
 )
 ```
 
 ```go
 const (
-	RCVMORE = IntSocketOption(C.ZMQ_RCVMORE)
-	SNDHWM  = IntSocketOption(C.ZMQ_SNDHWM)
-	RCVHWM  = IntSocketOption(C.ZMQ_RCVHWM)
+  RCVMORE = IntSocketOption(C.ZMQ_RCVMORE)
+  SNDHWM  = IntSocketOption(C.ZMQ_SNDHWM)
+  RCVHWM  = IntSocketOption(C.ZMQ_RCVHWM)
 
-	// TODO Not documented in the man page...
-	//LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
-	FAIL_UNROUTABLE     = BoolSocketOption(C.ZMQ_FAIL_UNROUTABLE)
-	TCP_KEEPALIVE       = IntSocketOption(C.ZMQ_TCP_KEEPALIVE)
-	TCP_KEEPALIVE_CNT   = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_CNT)
-	TCP_KEEPALIVE_IDLE  = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_IDLE)
-	TCP_KEEPALIVE_INTVL = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_INTVL)
-	TCP_ACCEPT_FILTER   = StringSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
+  // TODO Not documented in the man page...
+  //LAST_ENDPOINT       = UInt64SocketOption(C.ZMQ_LAST_ENDPOINT)
+  FAIL_UNROUTABLE     = BoolSocketOption(C.ZMQ_FAIL_UNROUTABLE)
+  TCP_KEEPALIVE       = IntSocketOption(C.ZMQ_TCP_KEEPALIVE)
+  TCP_KEEPALIVE_CNT   = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_CNT)
+  TCP_KEEPALIVE_IDLE  = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_IDLE)
+  TCP_KEEPALIVE_INTVL = IntSocketOption(C.ZMQ_TCP_KEEPALIVE_INTVL)
+  TCP_ACCEPT_FILTER   = StringSocketOption(C.ZMQ_TCP_ACCEPT_FILTER)
 
-	// Message options
-	MORE = MessageOption(C.ZMQ_MORE)
+  // Message options
+  MORE = MessageOption(C.ZMQ_MORE)
 
-	// Send/recv options
-	DONTWAIT = SendRecvOption(C.ZMQ_DONTWAIT)
+  // Send/recv options
+  DONTWAIT = SendRecvOption(C.ZMQ_DONTWAIT)
 
-	// Deprecated aliases
-	NOBLOCK = DONTWAIT
+  // Deprecated aliases
+  NOBLOCK = DONTWAIT
 )
 ```
 
 ```go
 var (
-	// Additional ZMQ errors
-	ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
-	EFSM           error = zmqErrno(C.EFSM)
-	EINVAL         error = zmqErrno(C.EINVAL)
-	ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
-	ETERM          error = zmqErrno(C.ETERM)
-	EMTHREAD       error = zmqErrno(C.EMTHREAD)
+  // Additional ZMQ errors
+  ENOTSOCK       error = zmqErrno(C.ENOTSOCK)
+  EFSM           error = zmqErrno(C.EFSM)
+  EINVAL         error = zmqErrno(C.EINVAL)
+  ENOCOMPATPROTO error = zmqErrno(C.ENOCOMPATPROTO)
+  ETERM          error = zmqErrno(C.ETERM)
+  EMTHREAD       error = zmqErrno(C.EMTHREAD)
 )
 ```
 
@@ -401,10 +403,10 @@ type PollEvents C.short
 
 ```go
 type PollItem struct {
-	Socket  *Socket         // socket to poll for events on
-	Fd      ZmqOsSocketType // fd to poll for events on as returned from os.File.Fd()
-	Events  PollEvents      // event set to poll for
-	REvents PollEvents      // events that were present
+  Socket  *Socket         // socket to poll for events on
+  Fd      ZmqOsSocketType // fd to poll for events on as returned from os.File.Fd()
+  Events  PollEvents      // event set to poll for
+  REvents PollEvents      // events that were present
 }
 ```
 
